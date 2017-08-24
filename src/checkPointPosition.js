@@ -2,8 +2,8 @@ ymaps.modules.define('checkPointPosition', [], function (provide) {
 
     /**
      * Проверятет находится ли точка внутри геометрии
-     * @param {Array[2]} point 
-     * @param {Array} coords 
+     * @param {Array[2]} point - Координаты точки.
+     * @param {Array} coords - Координаты фигуры.
      */
     function isInside(point, coords) {
         var parity = 0;
@@ -21,9 +21,9 @@ ymaps.modules.define('checkPointPosition', [], function (provide) {
 
     /**
      * Определяет положение точки относительно ребра
-     * @param {Array[2]} p - исследуемая точка
-     * @param {Array[2]} p0 - точка ребра
-     * @param {Array[2]} p1 - точка ребра
+     * @param {Array[2]} p - Исследуемая точка.
+     * @param {Array[2]} p0 - Точка ребра.
+     * @param {Array[2]} p1 - Точка ребра.
      */
     function pointClassify(p, p0, p1) {
         var a = pointMinus(p1, p0);
@@ -64,8 +64,8 @@ ymaps.modules.define('checkPointPosition', [], function (provide) {
 
     /**
      * Определяет как луч из точки взаимодействет с ребром (Пересекает, Касается, нейтральна)
-     * @param {Arrya[2]} point - исследуемая точка
-     * @param {Array} edge - ребро
+     * @param {Arrya[2]} point - Исследуемая точка.
+     * @param {Array} edge - Ребро.
      */
     function edgeType(point, edge) {
         var v = edge[0];

@@ -1,142 +1,11 @@
-ymaps.modules.define('util.calculateArea', [], function (provide) {
-    // Equatorial radius of Earth
-    var RADIUS = 6378137;
-
-    function calculateArea(feature) {
-        var geoJsonGeometry = getGeoJsonGeometry(feature);
-        return calculateJsonGeometryArea(geoJsonGeometry);
-    }
-
-    function getGeoJsonGeometry(feature) {
-        if (feature.type == 'Feature') {
-            return feature.geometry;
-        } else if (feature.geometry && feature.geometry.getType) {
-            if (feature.geometry.getType() == 'Circle') {
-                return {
-                    type: 'Circle',
-                    coordinates: feature.geometry.getCoordinates(),
-                    radius: feature.geometry.getRadius()
-                }
-            }
-            return {
-                type: feature.geometry.getType(),
-                coordinates: feature.geometry.getCoordinates()
-            }
-        } else {
-            throw new Error('util.calculateArea: Unknown input object.');
-        }
-    }
-
-    function calculateJsonGeometryArea(geometry) {
-        var area = 0;
-        var i;
-        switch (geometry.type) {
-            case 'Polygon':
-                return polygonArea(geometry.coordinates);
-            case 'MultiPolygon':
-                for (i = 0; i < geometry.coordinates.length; i++) {
-                    area += polygonArea(geometry.coordinates[i]);
-                }
-                return area;
-            case 'Rectangle':
-                return polygonArea([[
-                    geometry.coordinates[0],
-                    [geometry.coordinates[0][0], geometry.coordinates[1][1]],
-                    geometry.coordinates[1],
-                    [geometry.coordinates[1][0], geometry.coordinates[0][1]],
-                    geometry.coordinates[0]
-                ]]);
-            case 'Circle':
-                return Math.PI * Math.pow(geometry.radius, 2);
-            case 'Point':
-            case 'MultiPoint':
-            case 'LineString':
-            case 'MultiLineString':
-                return 0;
-        }
-    }
-
-    function polygonArea(coords) {
-        var area = 0;
-        if (coords && coords.length > 0) {
-            area += Math.abs(ringArea(coords[0]));
-            for (var i = 1; i < coords.length; i++) {
-                area -= Math.abs(ringArea(coords[i]));
-            }
-        }
-        return area;
-    }
-
-    /**
-     * Modified version of https://github.com/mapbox/geojson-area
-     * Calculate the approximate area of the polygon were it projected onto
-     *     the earth.  Note that this area will be positive if ring is oriented
-     *     clockwise, otherwise it will be negative.
-     *
-     * Reference:
-     * Robert. G. Chamberlain and William H. Duquette, "Some Algorithms for
-     *     Polygons on a Sphere", JPL Publication 07-03, Jet Propulsion
-     *     Laboratory, Pasadena, CA, June 2007 https://trs.jpl.nasa.gov/handle/2014/40409
-     *
-     * Returns:
-     * {Number} The approximate signed geodesic area of the polygon in square
-     *     meters.
-     */
-
-    function ringArea(coords) {
-        var p1;
-        var p2;
-        var p3;
-        var lowerIndex;
-        var middleIndex;
-        var upperIndex;
-        var i;
-        var area = 0;
-        var coordsLength = coords.length;
-        var longitude = ymaps.meta.coordinatesOrder == 'latlong' ? 1 : 0;
-        var latitude = ymaps.meta.coordinatesOrder == 'latlong' ? 0 : 1;
-        if (coordsLength > 2) {
-            for (i = 0; i < coordsLength; i++) {
-                // i = N-2
-                if (i === coordsLength - 2) {
-                    lowerIndex = coordsLength - 2;
-                    middleIndex = coordsLength - 1;
-                    upperIndex = 0;
-                } else if (i === coordsLength - 1) {
-                    // i = N-1
-                    lowerIndex = coordsLength - 1;
-                    middleIndex = 0;
-                    upperIndex = 1;
-                } else {
-                    // i = 0 to N-3
-                    lowerIndex = i;
-                    middleIndex = i + 1;
-                    upperIndex = i + 2;
-                }
-                p1 = coords[lowerIndex];
-                p2 = coords[middleIndex];
-                p3 = coords[upperIndex];
-                area += (rad(p3[longitude]) - rad(p1[longitude])) * Math.sin(rad(p2[latitude]));
-            }
-
-            area = area * RADIUS * RADIUS / 2;
-        }
-        return area;
-    }
-
-    function rad(_) {
-        return _ * Math.PI / 180;
-    }
-
-    provide(calculateArea);
-});
+ymaps.modules.define("util.calculateArea",[],function(e){function t(e){if("Feature"==e.type)return e.geometry;if(e.geometry&&e.geometry.getType)return"Circle"==e.geometry.getType()?{type:"Circle",coordinates:e.geometry.getCoordinates(),radius:e.geometry.getRadius()}:{type:e.geometry.getType(),coordinates:e.geometry.getCoordinates()};throw new Error("util.calculateArea: Unknown input object.")}function r(e){var t,r=0;switch(e.type){case"Polygon":return o(e.coordinates);case"MultiPolygon":for(t=0;t<e.coordinates.length;t++)r+=o(e.coordinates[t]);return r;case"Rectangle":return o([[e.coordinates[0],[e.coordinates[0][0],e.coordinates[1][1]],e.coordinates[1],[e.coordinates[1][0],e.coordinates[0][1]],e.coordinates[0]]]);case"Circle":return Math.PI*Math.pow(e.radius,2);case"Point":case"MultiPoint":case"LineString":case"MultiLineString":return 0}}function o(e){var t=0;if(e&&e.length>0){t+=Math.abs(n(e[0]));for(var r=1;r<e.length;r++)t-=Math.abs(n(e[r]))}return t}function n(e){var t,r,o,n,c,s,u=0,g=e.length,l="latlong"==ymaps.meta.coordinatesOrder?1:0,d="latlong"==ymaps.meta.coordinatesOrder?0:1;if(g>2){for(s=0;s<g;s++)s===g-2?(o=g-2,n=g-1,c=0):s===g-1?(o=g-1,n=0,c=1):(o=s,n=s+1,c=s+2),t=e[o],r=e[n],u+=(a(e[c][l])-a(t[l]))*Math.sin(a(r[d]));u=u*i*i/2}return u}function a(e){return e*Math.PI/180}var i=6378137;e(function(e){return r(t(e))})});
 
 ymaps.modules.define('checkPointPosition', [], function (provide) {
 
     /**
      * Проверятет находится ли точка внутри геометрии
-     * @param {Array[2]} point 
-     * @param {Array} coords 
+     * @param {Array[2]} point - Координаты точки.
+     * @param {Array} coords - Координаты фигуры.
      */
     function isInside(point, coords) {
         var parity = 0;
@@ -154,9 +23,9 @@ ymaps.modules.define('checkPointPosition', [], function (provide) {
 
     /**
      * Определяет положение точки относительно ребра
-     * @param {Array[2]} p - исследуемая точка
-     * @param {Array[2]} p0 - точка ребра
-     * @param {Array[2]} p1 - точка ребра
+     * @param {Array[2]} p - Исследуемая точка.
+     * @param {Array[2]} p0 - Точка ребра.
+     * @param {Array[2]} p1 - Точка ребра.
      */
     function pointClassify(p, p0, p1) {
         var a = pointMinus(p1, p0);
@@ -197,8 +66,8 @@ ymaps.modules.define('checkPointPosition', [], function (provide) {
 
     /**
      * Определяет как луч из точки взаимодействет с ребром (Пересекает, Касается, нейтральна)
-     * @param {Arrya[2]} point - исследуемая точка
-     * @param {Array} edge - ребро
+     * @param {Arrya[2]} point - Исследуемая точка.
+     * @param {Array} edge - Ребро.
      */
     function edgeType(point, edge) {
         var v = edge[0];
@@ -227,49 +96,41 @@ ymaps.modules.define('util.polylabel', [
     'util.nodeSize',
     'checkPointPosition'
 ], function (provide, getPolyLabelCenter, nodeSize, isInside) {
+
     /**
     * @param {Array} coords - Массив координат полигона.
-    * @returns {Object}
+    * @param {HTMLElement} elem - Элемент, который необходимо поместить в полигон.
+    * @param {number} zoom - Уровень масштаба для расчета.
+    * @returns {Object} data
+    * @returns {boolean} data.isInside - Поместился ли объект.
+    * @returns {Array[2]} data.center - Координаты точки, в которой можно отрисовывать элемент.
     */
-    var container = createContainer();
-    var elemData = appendElem();
-    hideContainer();
-
-    function getData(coords, zoom) {
+    function getData(coords, elem, zoom) {
         if (!coords instanceof Array) {
             throw new Error('Wrong params');
         }
         var data = getPolyLabelCenter(coords, 1.0);
-        isInclude(data.center, coords[data.index], zoom);
-
         return {
             center: data.center,
-            isInclude: isInclude(data.center, coords[data.index], zoom)
+            isInside: checkData(data.center, coords[data.index], zoom, getElemSize(elem))
         };
     }
 
-    function createContainer() {
+    function getElemSize(elem) {
         var container = document.createElement('div');
         container.style.display = 'inline-block';
+        container.appendChild(elem);
         document.body.appendChild(container);
-        return container;
-    }
-
-    function hideContainer() {
-        container.style.display = 'none';
-    }
-
-    function appendElem() {
-        var text = document.createElement('h6');
-        text.innerText = 'asdasddsasdasdasdasdas';
-        container.appendChild(text);
+        var w = elem.clientWidth;
+        var h = elem.clientHeight;
+        document.body.removeChild(container);
         return {
-            w: text.clientWidth,
-            h: text.clientHeight
+            w: w,
+            h: h
         }
     }
 
-    function isInclude(center, coords, zoom) {
+    function checkData(center, coords, zoom, elemData) {
         var centerProj = ymaps.projection.sphericalMercator.toGlobalPixels(center, zoom);
         var w = elemData.w;
         var h = elemData.h;
@@ -534,8 +395,8 @@ ymaps.modules.define('getPolyLabelCenter', [
 
     /**
      * Возвращает оптимальный центр из полигона и индекс полигона
-     * @param {Array} polygonCoords 
-     * @param {int} precision 
+     * @param {Array} polygonCoords - координаты полигона
+     * @param {number} precision 
      * @param {boolean} debug 
      */
     function getPolylabelCenter(polygonCoords, precision, debug) {

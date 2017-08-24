@@ -240,8 +240,8 @@ ymaps.modules.define('getPolyLabelCenter', [
 
     /**
      * Возвращает оптимальный центр из полигона и индекс полигона
-     * @param {Array} polygonCoords 
-     * @param {int} precision 
+     * @param {Array} polygonCoords - координаты полигона
+     * @param {number} precision 
      * @param {boolean} debug 
      */
     function getPolylabelCenter(polygonCoords, precision, debug) {

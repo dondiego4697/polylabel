@@ -3,49 +3,41 @@ ymaps.modules.define('util.polylabel', [
     'util.nodeSize',
     'checkPointPosition'
 ], function (provide, getPolyLabelCenter, nodeSize, isInside) {
+
     /**
     * @param {Array} coords - Массив координат полигона.
-    * @returns {Object}
+    * @param {HTMLElement} elem - Элемент, который необходимо поместить в полигон.
+    * @param {number} zoom - Уровень масштаба для расчета.
+    * @returns {Object} data
+    * @returns {boolean} data.isInside - Поместился ли объект.
+    * @returns {Array[2]} data.center - Координаты точки, в которой можно отрисовывать элемент.
     */
-    var container = createContainer();
-    var elemData = appendElem();
-    hideContainer();
-
-    function getData(coords, zoom) {
+    function getData(coords, elem, zoom) {
         if (!coords instanceof Array) {
             throw new Error('Wrong params');
         }
         var data = getPolyLabelCenter(coords, 1.0);
-        isInclude(data.center, coords[data.index], zoom);
-
         return {
             center: data.center,
-            isInclude: isInclude(data.center, coords[data.index], zoom)
+            isInside: checkData(data.center, coords[data.index], zoom, getElemSize(elem))
         };
     }
 
-    function createContainer() {
+    function getElemSize(elem) {
         var container = document.createElement('div');
         container.style.display = 'inline-block';
+        container.appendChild(elem);
         document.body.appendChild(container);
-        return container;
-    }
-
-    function hideContainer() {
-        container.style.display = 'none';
-    }
-
-    function appendElem() {
-        var text = document.createElement('h6');
-        text.innerText = 'asdasddsasdasdasdasdas';
-        container.appendChild(text);
+        var w = elem.clientWidth;
+        var h = elem.clientHeight;
+        document.body.removeChild(container);
         return {
-            w: text.clientWidth,
-            h: text.clientHeight
+            w: w,
+            h: h
         }
     }
 
-    function isInclude(center, coords, zoom) {
+    function checkData(center, coords, zoom, elemData) {
         var centerProj = ymaps.projection.sphericalMercator.toGlobalPixels(center, zoom);
         var w = elemData.w;
         var h = elemData.h;
