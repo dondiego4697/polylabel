@@ -7,12 +7,9 @@ ymaps.modules.define('util.polylabel', [
     * @param {Array} coords - Массив координат полигона.
     * @returns {Object}
     */
-    var container = document.createElement('div');
-    container.style.display = 'inline-block';
-    var text = document.createElement('h6');
-    text.innerText = '';
-    container.appendChild(text);
-    document.body.appendChild(container);
+    var container = createContainer();
+    var elemData = appendElem();
+    hideContainer();
 
     function getData(coords, zoom) {
         if (!coords instanceof Array) {
@@ -27,15 +24,36 @@ ymaps.modules.define('util.polylabel', [
         };
     }
 
+    function createContainer() {
+        var container = document.createElement('div');
+        container.style.display = 'inline-block';
+        document.body.appendChild(container);
+        return container;
+    }
+
+    function hideContainer() {
+        container.style.display = 'none';
+    }
+
+    function appendElem() {
+        var text = document.createElement('h6');
+        text.innerText = 'asdasddsasdasdasdasdas';
+        container.appendChild(text);
+        return {
+            w: text.clientWidth,
+            h: text.clientHeight
+        }
+    }
+
     function isInclude(center, coords, zoom) {
         var centerProj = ymaps.projection.sphericalMercator.toGlobalPixels(center, zoom);
-        var labelW = text.clientWidth;
-        var labelH = text.clientHeight;
+        var w = elemData.w;
+        var h = elemData.h;
         var elemPoints = [];
-        elemPoints.push([centerProj[0] - labelW / 2, centerProj[1] - labelH / 2]);
-        elemPoints.push([centerProj[0] - labelW / 2, centerProj[1] + labelH / 2]);
-        elemPoints.push([centerProj[0] + labelW / 2, centerProj[1] - labelH / 2]);
-        elemPoints.push([centerProj[0] + labelW / 2, centerProj[1] + labelH / 2]);
+        elemPoints.push([centerProj[0] - w / 2, centerProj[1] - h / 2]);
+        elemPoints.push([centerProj[0] - w / 2, centerProj[1] + h / 2]);
+        elemPoints.push([centerProj[0] + w / 2, centerProj[1] - h / 2]);
+        elemPoints.push([centerProj[0] + w / 2, centerProj[1] + h / 2]);
 
         for (var i = 0; i < elemPoints.length; i++) {
             var point = ymaps.projection.sphericalMercator.fromGlobalPixels(elemPoints[i], zoom);
