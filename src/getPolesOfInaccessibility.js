@@ -1,4 +1,4 @@
-ymaps.modules.define('getPolyLabelCenter', [
+ymaps.modules.define('getPolesOfInaccessibility', [
     'util.calculateArea'
 ], function (provide, calculateArea) {
     function TinyQueue(data, compare) {
@@ -87,7 +87,7 @@ ymaps.modules.define('getPolyLabelCenter', [
 
     var Queue = TinyQueue;
 
-    function polylabel(polygon, precision, debug) {
+    function getPolesOfInaccessibility(polygon, precision, debug) {
         precision = precision || 1.0;
 
         // find the bounding box of the outer ring
@@ -266,7 +266,7 @@ ymaps.modules.define('getPolyLabelCenter', [
             data = polygonCoords;
         }
         return {
-            center: polylabel(data, precision, debug),
+            center: getPolesOfInaccessibility(data, precision, debug),
             index: indexOfMaxArea
         }
     }

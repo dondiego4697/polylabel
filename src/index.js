@@ -1,5 +1,5 @@
 ymaps.modules.define('util.polylabel', [
-    'getPolyLabelCenter',
+    'getPolesOfInaccessibility',
     'util.nodeSize',
     'checkPointPosition'
 ], function (provide, getPolyLabelCenter, nodeSize, isInside) {
