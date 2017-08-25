@@ -4,14 +4,26 @@ module.exports = function (grunt) {
         concat: {
             build: {
                 src: [
-                    'src/*.js'
+                    'src/calculateArea.min.js',
+                    'src/checkPointPosition.js',
+                    'src/getPolesOfInaccessibility.js',
+                    'src/index.js'
                 ],
-                dest: 'build/util.polylabel.js'
+                dest: 'build/util.polylabel1.js'
+            },
+            build1: {
+                src: [
+                    'src/calculateArea.min.js',
+                    'src/checkPointPosition.js',
+                    'src/getPolesOfInaccessibility.js',
+                    'src/index2.js'
+                ],
+                dest: 'build/util.polylabel2.js'
             }
         },
         uglify: {
             build: {
-                src: 'build/util.polylabel.js',
+                src: 'build/util.polylabel1.js',
                 dest: 'build/util.polylabel.min.js'
             }
         },

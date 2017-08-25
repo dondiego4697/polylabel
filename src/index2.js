@@ -1,7 +1,6 @@
-ymaps.modules.define('util.polylabel', [
+ymaps.modules.define('util.polylabel2', [
     'getPolesOfInaccessibility',
-    'checkPointPosition'
-], function (provide, getPolyLabelCenter, isInside) {
+], function (provide, getPolyLabelCenter) {
 
     /**
     * @param {Array} coords - Массив координат полигона.
@@ -16,9 +15,22 @@ ymaps.modules.define('util.polylabel', [
             throw new Error('Wrong params');
         }
         var data = getPolyLabelCenter(coords, 1.0);
+        var elemSize = getElemSize(elem);
+        var w = elemSize.w;
+        var h = elemSize.h;
+        var elemPoints = [];
+        var centerProj = ymaps.projection.sphericalMercator.toGlobalPixels(data.center, zoom);
+        elemPoints.push([centerProj[0] - w / 2, centerProj[1] - h / 2]);
+        elemPoints.push([centerProj[0] - w / 2, centerProj[1] + h / 2]);
+        elemPoints.push([centerProj[0] + w / 2, centerProj[1] - h / 2]);
+        elemPoints.push([centerProj[0] + w / 2, centerProj[1] + h / 2]);
+        elemPoints = elemPoints.map(function (p) {
+            return ymaps.projection.sphericalMercator.fromGlobalPixels(p, zoom);
+        });
         return {
             center: data.center,
-            isInside: checkData(data.center, coords[data.index], zoom, getElemSize(elem))
+            size: elemSize,
+            elemPoints: elemPoints
         };
     }
 
@@ -35,26 +47,6 @@ ymaps.modules.define('util.polylabel', [
             h: h
         }
     }
-
-    function checkData(center, coords, zoom, elemData) {
-        var centerProj = ymaps.projection.sphericalMercator.toGlobalPixels(center, zoom);
-        var w = elemData.w;
-        var h = elemData.h;
-        var elemPoints = [];
-        elemPoints.push([centerProj[0] - w / 2, centerProj[1] - h / 2]);
-        elemPoints.push([centerProj[0] - w / 2, centerProj[1] + h / 2]);
-        elemPoints.push([centerProj[0] + w / 2, centerProj[1] - h / 2]);
-        elemPoints.push([centerProj[0] + w / 2, centerProj[1] + h / 2]);
-
-        for (var i = 0; i < elemPoints.length; i++) {
-            var point = ymaps.projection.sphericalMercator.fromGlobalPixels(elemPoints[i], zoom);
-            if (isInside(point, coords) !== 'INSIDE') {
-                return false;
-            }
-        }
-        return true;
-    }
-
 
     provide(getData);
 });

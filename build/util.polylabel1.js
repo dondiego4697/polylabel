@@ -65,7 +65,7 @@ ymaps.modules.define('checkPointPosition', [], function (provide) {
     }
 
     /**
-     * Определяет как луч из точки взаимодействет с ребром (Пересекает, Касается, нейтральна)
+     * Определяет как луч из точки взаимодействет с ребром (Пересекается, Касается, Нейтрально)
      * @param {Arrya[2]} point - Исследуемая точка.
      * @param {Array} edge - Ребро.
      */
@@ -368,9 +368,8 @@ ymaps.modules.define('getPolesOfInaccessibility', [
 
 ymaps.modules.define('util.polylabel', [
     'getPolesOfInaccessibility',
-    'util.nodeSize',
     'checkPointPosition'
-], function (provide, getPolyLabelCenter, nodeSize, isInside) {
+], function (provide, getPolyLabelCenter, isInside) {
 
     /**
     * @param {Array} coords - Массив координат полигона.
