@@ -1,7 +1,6 @@
 ymaps.modules.define("util.calculateArea",[],function(e){function t(e){if("Feature"==e.type)return e.geometry;if(e.geometry&&e.geometry.getType)return"Circle"==e.geometry.getType()?{type:"Circle",coordinates:e.geometry.getCoordinates(),radius:e.geometry.getRadius()}:{type:e.geometry.getType(),coordinates:e.geometry.getCoordinates()};throw new Error("util.calculateArea: Unknown input object.")}function r(e){var t,r=0;switch(e.type){case"Polygon":return o(e.coordinates);case"MultiPolygon":for(t=0;t<e.coordinates.length;t++)r+=o(e.coordinates[t]);return r;case"Rectangle":return o([[e.coordinates[0],[e.coordinates[0][0],e.coordinates[1][1]],e.coordinates[1],[e.coordinates[1][0],e.coordinates[0][1]],e.coordinates[0]]]);case"Circle":return Math.PI*Math.pow(e.radius,2);case"Point":case"MultiPoint":case"LineString":case"MultiLineString":return 0}}function o(e){var t=0;if(e&&e.length>0){t+=Math.abs(n(e[0]));for(var r=1;r<e.length;r++)t-=Math.abs(n(e[r]))}return t}function n(e){var t,r,o,n,c,s,u=0,g=e.length,l="latlong"==ymaps.meta.coordinatesOrder?1:0,d="latlong"==ymaps.meta.coordinatesOrder?0:1;if(g>2){for(s=0;s<g;s++)s===g-2?(o=g-2,n=g-1,c=0):s===g-1?(o=g-1,n=0,c=1):(o=s,n=s+1,c=s+2),t=e[o],r=e[n],u+=(a(e[c][l])-a(t[l]))*Math.sin(a(r[d]));u=u*i*i/2}return u}function a(e){return e*Math.PI/180}var i=6378137;e(function(e){return r(t(e))})});
 
 ymaps.modules.define('checkPointPosition', [], function (provide) {
-
     /**
      * Проверятет находится ли точка внутри геометрии
      * @param {Array[2]} point - Координаты точки.
@@ -184,7 +183,10 @@ ymaps.modules.define('getPolesOfInaccessibility', [
         precision = precision || 1.0;
 
         // find the bounding box of the outer ring
-        var minX, minY, maxX, maxY;
+        var minX;
+        var minY;
+        var maxX;
+        var maxY;
 
         for (var i = 0; i < polygon[0].length; i++) {
             var p = polygon[0][i];
@@ -227,7 +229,7 @@ ymaps.modules.define('getPolesOfInaccessibility', [
             // update the best cell if we found a better one
             if (cell.d > bestCell.d) {
                 bestCell = cell;
-                if (debug) console.log('found best %d after %d probes', Math.round(1e4 * cell.d) / 1e4, numProbes);
+                if (debug) console.error('found best %d after %d probes', Math.round(1e4 * cell.d) / 1e4, numProbes);
             }
 
             // do not drill down further if there's no chance of a better solution
@@ -243,8 +245,8 @@ ymaps.modules.define('getPolesOfInaccessibility', [
         }
 
         if (debug) {
-            console.log('num probes: ' + numProbes);
-            console.log('best distance: ' + bestCell.d);
+            console.error('num probes: ' + numProbes);
+            console.error('best distance: ' + bestCell.d);
         }
 
         return [bestCell.x, bestCell.y];
@@ -305,20 +307,17 @@ ymaps.modules.define('getPolesOfInaccessibility', [
 
     // get squared distance from a point to a segment
     function getSegDistSq(px, py, a, b) {
-
         var x = a[0];
         var y = a[1];
         var dx = b[0] - x;
         var dy = b[1] - y;
 
         if (dx !== 0 || dy !== 0) {
-
             var t = ((px - x) * dx + (py - y) * dy) / (dx * dx + dy * dy);
 
             if (t > 1) {
                 x = b[0];
                 y = b[1];
-
             } else if (t > 0) {
                 x += dx * t;
                 y += dy * t;
@@ -345,9 +344,9 @@ ymaps.modules.define('getPolesOfInaccessibility', [
             for (var i = 0; i < polygonCoords.length; i++) {
                 var polygon = new ymaps.GeoObject({
                     geometry: {
-                        type: "Polygon", coordinates: [polygonCoords[i]]
+                        type: 'Polygon', coordinates: [polygonCoords[i]]
                     }
-                })
+                });
                 var area = Math.round(calculateArea(polygon));
                 if (maxArea < area) {
                     maxArea = area;
@@ -361,7 +360,7 @@ ymaps.modules.define('getPolesOfInaccessibility', [
         return {
             center: getPolesOfInaccessibility(data, precision, debug),
             index: indexOfMaxArea
-        }
+        };
     }
     provide(getPolylabelCenter);
 });
@@ -371,8 +370,13 @@ ymaps.modules.define('util.polylabel', [
     'util.nodeSize',
     'checkPointPosition'
 ], function (provide, getPolyLabelCenter, nodeSize, isInside) {
-    var getObjectCollection, htmlElems, geoObjects, map, zoomAndCenterCollection = [];
-    var MIN_ZOOM = 0, MAX_ZOOM = 19;
+    var getObjectCollection;
+    var htmlElems;
+    var geoObjects;
+    var map;
+    var zoomAndCenterCollection = [];
+    var MIN_ZOOM = 0;
+    var MAX_ZOOM = 19;
 
     /**
      * @param {GeoObjectCollection} pGeoObjects - Массив геообъектов.
@@ -411,23 +415,23 @@ ymaps.modules.define('util.polylabel', [
             i++;
         });
         map.geoObjects.add(getObjectCollection);
-        console.log(performance.now() - time);
+        console.error(performance.now() - time);
     }
 
     function createLabel(center, text) {
         var myGeoObject = new ymaps.GeoObject({
             geometry: {
-                type: "Point",
+                type: 'Point',
                 coordinates: center
             },
             properties: {
-                iconContent: text,
+                iconContent: text
             }
         }, {
-                preset: 'islands#blackStretchyIcon'
-            });
+            preset: 'islands#blackStretchyIcon'
+        });
         return myGeoObject;
-    };
+    }
 
     /**
     * Функция возвращает центр и первый zoom, на котором видна подпись
@@ -441,7 +445,7 @@ ymaps.modules.define('util.polylabel', [
         var data = getPolyLabelCenter(coords, 1.0);
         return {
             center: data.center,
-            firstZoomInside: checkData(data.center, coords[data.index], getElemSize(elem))
+            firstZoomInside: analyzeData(data.center, coords[data.index], getElemSize(elem))
         };
     }
 
@@ -455,12 +459,12 @@ ymaps.modules.define('util.polylabel', [
         return {
             w: size[0],
             h: size[1]
-        }
+        };
     }
 
     function initMapListener() {
         map.events.add('boundschange', function (event) {
-            if (event.get('newZoom') != event.get('oldZoom')) {
+            if (event.get('newZoom') !== event.get('oldZoom')) {
                 map.geoObjects.remove(getObjectCollection);
                 getObjectCollection.removeAll();
                 calculate();
@@ -474,8 +478,11 @@ ymaps.modules.define('util.polylabel', [
      * @param {Array} coords - Координаты полигона.
      * @param {Object} elemData - Данные об элементе подписи.
      */
-    function checkData(center, coords, elemData) {
-        var i = MIN_ZOOM, j = MAX_ZOOM, zoom, result;
+    function analyzeData(center, coords, elemData) {
+        var i = MIN_ZOOM;
+        var j = MAX_ZOOM;
+        var zoom;
+        var result;
         while (i < j) {
             zoom = Math.floor((i + j) / 2);
             var elemPoints = calcElemPoints(center, zoom, elemData);

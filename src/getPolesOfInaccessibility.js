@@ -91,7 +91,10 @@ ymaps.modules.define('getPolesOfInaccessibility', [
         precision = precision || 1.0;
 
         // find the bounding box of the outer ring
-        var minX, minY, maxX, maxY;
+        var minX;
+        var minY;
+        var maxX;
+        var maxY;
 
         for (var i = 0; i < polygon[0].length; i++) {
             var p = polygon[0][i];
@@ -134,7 +137,7 @@ ymaps.modules.define('getPolesOfInaccessibility', [
             // update the best cell if we found a better one
             if (cell.d > bestCell.d) {
                 bestCell = cell;
-                if (debug) console.log('found best %d after %d probes', Math.round(1e4 * cell.d) / 1e4, numProbes);
+                if (debug) console.error('found best %d after %d probes', Math.round(1e4 * cell.d) / 1e4, numProbes);
             }
 
             // do not drill down further if there's no chance of a better solution
@@ -150,8 +153,8 @@ ymaps.modules.define('getPolesOfInaccessibility', [
         }
 
         if (debug) {
-            console.log('num probes: ' + numProbes);
-            console.log('best distance: ' + bestCell.d);
+            console.error('num probes: ' + numProbes);
+            console.error('best distance: ' + bestCell.d);
         }
 
         return [bestCell.x, bestCell.y];
@@ -212,20 +215,17 @@ ymaps.modules.define('getPolesOfInaccessibility', [
 
     // get squared distance from a point to a segment
     function getSegDistSq(px, py, a, b) {
-
         var x = a[0];
         var y = a[1];
         var dx = b[0] - x;
         var dy = b[1] - y;
 
         if (dx !== 0 || dy !== 0) {
-
             var t = ((px - x) * dx + (py - y) * dy) / (dx * dx + dy * dy);
 
             if (t > 1) {
                 x = b[0];
                 y = b[1];
-
             } else if (t > 0) {
                 x += dx * t;
                 y += dy * t;
@@ -252,9 +252,9 @@ ymaps.modules.define('getPolesOfInaccessibility', [
             for (var i = 0; i < polygonCoords.length; i++) {
                 var polygon = new ymaps.GeoObject({
                     geometry: {
-                        type: "Polygon", coordinates: [polygonCoords[i]]
+                        type: 'Polygon', coordinates: [polygonCoords[i]]
                     }
-                })
+                });
                 var area = Math.round(calculateArea(polygon));
                 if (maxArea < area) {
                     maxArea = area;
@@ -268,7 +268,7 @@ ymaps.modules.define('getPolesOfInaccessibility', [
         return {
             center: getPolesOfInaccessibility(data, precision, debug),
             index: indexOfMaxArea
-        }
+        };
     }
     provide(getPolylabelCenter);
 });

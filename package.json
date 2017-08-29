@@ -4,17 +4,26 @@
   "description": "",
   "main": "build/util.polulabel.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "CHROME_BIN=/usr/bin/chromium-browser ./node_modules/karma/bin/karma start karma.conf.js",
+    "lint": "eslint ."
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    
-  },
+  "dependencies": {},
   "devDependencies": {
+    "chai": "^4.1.1",
+    "chrome-remote-interface": "^0.24.4",
+    "eslint": "^4.5.0",
+    "eslint-config-google": "^0.9.1",
+    "eslint-config-loris": "^8.0.0",
     "grunt": "1.0.1",
     "grunt-contrib-concat": "1.0.1",
     "grunt-contrib-uglify": "3.0.1",
-    "grunt-contrib-watch": "1.0.0"
+    "grunt-contrib-watch": "1.0.0",
+    "karma": "^1.7.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-expect": "^1.1.3",
+    "karma-mocha": "^1.3.0",
+    "mocha": "^3.5.0"
   }
 }

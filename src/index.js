@@ -3,8 +3,13 @@ ymaps.modules.define('util.polylabel', [
     'util.nodeSize',
     'checkPointPosition'
 ], function (provide, getPolyLabelCenter, nodeSize, isInside) {
-    var getObjectCollection, htmlElems, geoObjects, map, zoomAndCenterCollection = [];
-    var MIN_ZOOM = 0, MAX_ZOOM = 19;
+    var getObjectCollection;
+    var htmlElems;
+    var geoObjects;
+    var map;
+    var zoomAndCenterCollection = [];
+    var MIN_ZOOM = 0;
+    var MAX_ZOOM = 19;
 
     /**
      * @param {GeoObjectCollection} pGeoObjects - Массив геообъектов.
@@ -43,23 +48,23 @@ ymaps.modules.define('util.polylabel', [
             i++;
         });
         map.geoObjects.add(getObjectCollection);
-        console.log(performance.now() - time);
+        console.error(performance.now() - time);
     }
 
     function createLabel(center, text) {
         var myGeoObject = new ymaps.GeoObject({
             geometry: {
-                type: "Point",
+                type: 'Point',
                 coordinates: center
             },
             properties: {
-                iconContent: text,
+                iconContent: text
             }
         }, {
-                preset: 'islands#blackStretchyIcon'
-            });
+            preset: 'islands#blackStretchyIcon'
+        });
         return myGeoObject;
-    };
+    }
 
     /**
     * Функция возвращает центр и первый zoom, на котором видна подпись
@@ -73,7 +78,7 @@ ymaps.modules.define('util.polylabel', [
         var data = getPolyLabelCenter(coords, 1.0);
         return {
             center: data.center,
-            firstZoomInside: checkData(data.center, coords[data.index], getElemSize(elem))
+            firstZoomInside: analyzeData(data.center, coords[data.index], getElemSize(elem))
         };
     }
 
@@ -87,12 +92,12 @@ ymaps.modules.define('util.polylabel', [
         return {
             w: size[0],
             h: size[1]
-        }
+        };
     }
 
     function initMapListener() {
         map.events.add('boundschange', function (event) {
-            if (event.get('newZoom') != event.get('oldZoom')) {
+            if (event.get('newZoom') !== event.get('oldZoom')) {
                 map.geoObjects.remove(getObjectCollection);
                 getObjectCollection.removeAll();
                 calculate();
@@ -106,8 +111,11 @@ ymaps.modules.define('util.polylabel', [
      * @param {Array} coords - Координаты полигона.
      * @param {Object} elemData - Данные об элементе подписи.
      */
-    function checkData(center, coords, elemData) {
-        var i = MIN_ZOOM, j = MAX_ZOOM, zoom, result;
+    function analyzeData(center, coords, elemData) {
+        var i = MIN_ZOOM;
+        var j = MAX_ZOOM;
+        var zoom;
+        var result;
         while (i < j) {
             zoom = Math.floor((i + j) / 2);
             var elemPoints = calcElemPoints(center, zoom, elemData);

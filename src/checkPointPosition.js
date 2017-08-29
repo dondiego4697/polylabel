@@ -1,5 +1,4 @@
 ymaps.modules.define('checkPointPosition', [], function (provide) {
-
     /**
      * Проверятет находится ли точка внутри геометрии
      * @param {Array[2]} point - Координаты точки.
