@@ -3,3 +3,4 @@ node_modules/
 Gruntfile.js
 src/calculateArea.min.js
 karma.conf.js
+builder/

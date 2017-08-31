@@ -3,6 +3,8 @@ module.exports = {
     "root": true,
     "env": {
         "browser": true,
+        "commonjs": true,
+        "es6": true,
         "mocha": true
     },
     "rules": {
@@ -12,6 +14,8 @@ module.exports = {
         "no-implicit-globals": 0
     },
     "globals": {
+        "modules": true,
+        "module": true,
         "ymaps": true,
         "chai": true,
         "describe": true,
@@ -20,5 +24,8 @@ module.exports = {
         "it": true,
         "before": true,
         "after": true
+    },
+    "parserOptions": {
+        "sourceType": "module"
     }
 };

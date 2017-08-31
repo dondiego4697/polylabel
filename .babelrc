@@ -1,0 +1,52 @@
+{
+    "sourceMaps": true,
+    "sourceRoot": "src/",
+    "presets": [
+        [
+            "env",
+            {
+                "targets": [
+                    "last 5 version",
+                    "ie >= 8",
+                    "safari >= 7"
+                ],
+                "loose": true,
+                "spec": false,
+                "strict": false,
+                "noInterop": true,
+                "modules": false
+            }
+        ]
+    ],
+    "plugins": [
+        [
+            "transform-class-properties",
+            {
+                "spec": false
+            }
+        ],
+        [
+            "./builder/plugin-transform-ym-helpers",
+            {
+                "helpersOverrides": {
+                    "inheritsLoose": "util.defineClass",
+                    "inherits": "util.defineClass",
+                    "extends": "util.extend"
+                },
+                "replace": {
+                    "Object.assign": "util.extend",
+                    "Array.isArray": [
+                        "util.array",
+                        "isArray"
+                    ]
+                }
+            }
+        ],
+        [
+            "./builder/babel-plugin-transform-es2015-modules-ym",
+            {
+                "sourceExtension": ".es6.js"
+            }
+        ]
+    ]
+}

@@ -30,19 +30,38 @@
             }, { searchControlProvider: 'yandex#search' });;
         }
         ymaps.ready(['util.polylabel']).then(function () {
-            var htmlElems = [];
             var myMap = createMap();
             ymaps.regions.load('001', {
                 lang: 'en',
                 quality: 2
             }).then(function (result) {
-                myMap.geoObjects.add(result.geoObjects);
-                myMap.geoObjects.get(0).each(function (geoObject) {
-                    var htmlElem = document.createElement('h6');
-                    htmlElem.innerText = 'asdas';
-                    htmlElems.push(htmlElem)
+                //result.geoObjects.options.set({ labelForceVisibleZoom: '1_100' });
+                var mainObjectCollection = new ymaps.GeoObjectCollection();
+                mainObjectCollection.add(result.geoObjects);
+                myMap.geoObjects.add(mainObjectCollection);
+
+                var htmlElem = document.createElement('div');
+                htmlElem.style.margin = 0;
+                htmlElem.innerHTML = '<img src="morty.jpg" width=50px height=50px style="border-radius: 3px;">';
+
+                let i = 0;
+                mainObjectCollection.get(0).each(function (geoObject) {
+                    if ([130, 131, 132, 133, 134].includes(i)) {
+                        geoObject.options.set({ labelForceVisibleZoom: '0_100' });
+                        //geoObject.options.set({ labelForceVisibleZoom: ['0_1', '2_5'] });
+                    } else if ([150, 160, 170, 180, 190].includes(i)) {
+                        geoObject.options.set({ labelForceVisibleZoom: '0_100' });
+                        geoObject.properties.set({
+                            labelCenterCoords: {
+                                1: [i - 140, i - 140],
+                                '2_100': [i - 200, i - 200],
+                            }
+                        });
+                    }
+                    geoObject.options.set({ labelHtml: htmlElem });
+                    i++;
                 });
-                ymaps.util.polylabel(myMap.geoObjects.get(0), htmlElems, myMap);
+                new ymaps.util.polylabel(myMap, mainObjectCollection);
             });
         });
     </script>
