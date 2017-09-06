@@ -96,10 +96,18 @@
                     geoObject.options.set({ labelHtml: createLabel(i) });
                     i++;
                 });
-                new ymaps.util.polylabel(myMap, mainObjectCollection);
+                let polyLabeler = new ymaps.util.polylabel(myMap, mainObjectCollection);
                 let go = createGeoObject();
                 go.options.set({ labelHtml: createLabel('new') });
 
+                /* setTimeout(() => {
+                    polyLabeler.destroy();
+                }, 2000); */
+                /* setTimeout(() => {
+                    mainObjectCollection.get(1).get(0).options.set({ labelForceVisibleZoom: '0_100' });
+                    console.log(mainObjectCollection.get(1).get(0).options.get('labelForceVisibleZoom'));
+                    polyLabeler.update();
+                }, 2000); */
                 /* setTimeout(() => {
                     testC.add(go);
                 }, 5000);

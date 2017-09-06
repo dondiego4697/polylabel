@@ -12,35 +12,48 @@ class Polylabel {
         this._map = map;
         this._collections = collections;
         this._labelsCollections = new ymaps.GeoObjectCollection();
+        this._map.geoObjects.add(this._labelsCollections);
         this._initData();
     }
 
-    _initData() {
-        this._initMapListeners();
+    update() {
         this._calculateCollections(true);
-        this._initCollectionListeners();
+    }
+
+    destroy() {
+        this._labelsCollections.removeAll();
+        this._deleteListeners();
+    }
+
+    _initData() {
+        this._calculateCollections(true).then(() => {
+            this._initMapListeners();
+            this._initCollectionListeners();
+        });
     }
 
     _calculateCollections(isFirstCals) {
-        if (isFirstCals) {
-            this._labelsCollections.options.set({pane: 'phantom'});
-            this._labelsCollections.removeAll();
-            this._map.geoObjects.add(this._labelsCollections);
-        }
-        this._collections.each((collection) => {
-            let labelCollection;
+        return new Promise(resolve => {
             if (isFirstCals) {
-                labelCollection = new ymaps.GeoObjectCollection();
-                this._labelsCollections.add(labelCollection);
+                this._labelsCollections.removeAll();
+                this._labelsCollections.options.set({pane: 'phantom'});
             }
-            collection.each((geoObject) => {
+            this._collections.each((collection) => {
+                let labelCollection;
                 if (isFirstCals) {
-                    this._calculateGeoObject(geoObject, labelCollection).then(() => {
-                        this._analyseLabelData(geoObject);
-                    });
-                } else {
-                    this._analyseLabelData(geoObject);
+                    labelCollection = new ymaps.GeoObjectCollection();
+                    this._labelsCollections.add(labelCollection);
                 }
+                collection.each((geoObject) => {
+                    if (isFirstCals) {
+                        this._calculateGeoObject(geoObject, labelCollection).then(() => {
+                            this._analyseLabelData(geoObject);
+                        });
+                    } else {
+                        this._analyseLabelData(geoObject);
+                    }
+                });
+                resolve();
             });
         });
     }
@@ -117,6 +130,10 @@ class Polylabel {
                 }
             }
         });
+    }
+    _deleteListeners() {
+        this._collections.events.remove(['add', 'remove']);
+        this._map.events.remove('boundschange');
     }
 }
 export default Polylabel;

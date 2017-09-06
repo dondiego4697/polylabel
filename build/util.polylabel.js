@@ -81,37 +81,52 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
             this._map = map;
             this._collections = collections;
             this._labelsCollections = new ymaps.GeoObjectCollection();
+            this._map.geoObjects.add(this._labelsCollections);
             this._initData();
         }
 
-        Polylabel.prototype._initData = function _initData() {
-            this._initMapListeners();
+        Polylabel.prototype.update = function update() {
             this._calculateCollections(true);
-            this._initCollectionListeners();
+        };
+
+        Polylabel.prototype.destroy = function destroy() {
+            this._labelsCollections.removeAll();
+            this._deleteListeners();
+        };
+
+        Polylabel.prototype._initData = function _initData() {
+            var _this = this;
+
+            this._calculateCollections(true).then(function () {
+                _this._initMapListeners();
+                _this._initCollectionListeners();
+            });
         };
 
         Polylabel.prototype._calculateCollections = function _calculateCollections(isFirstCals) {
-            var _this = this;
+            var _this2 = this;
 
-            if (isFirstCals) {
-                this._labelsCollections.options.set({ pane: 'phantom' });
-                this._labelsCollections.removeAll();
-                this._map.geoObjects.add(this._labelsCollections);
-            }
-            this._collections.each(function (collection) {
-                var labelCollection = void 0;
+            return new Promise(function (resolve) {
                 if (isFirstCals) {
-                    labelCollection = new ymaps.GeoObjectCollection();
-                    _this._labelsCollections.add(labelCollection);
+                    _this2._labelsCollections.removeAll();
+                    _this2._labelsCollections.options.set({ pane: 'phantom' });
                 }
-                collection.each(function (geoObject) {
+                _this2._collections.each(function (collection) {
+                    var labelCollection = void 0;
                     if (isFirstCals) {
-                        _this._calculateGeoObject(geoObject, labelCollection).then(function () {
-                            _this._analyseLabelData(geoObject);
-                        });
-                    } else {
-                        _this._analyseLabelData(geoObject);
+                        labelCollection = new ymaps.GeoObjectCollection();
+                        _this2._labelsCollections.add(labelCollection);
                     }
+                    collection.each(function (geoObject) {
+                        if (isFirstCals) {
+                            _this2._calculateGeoObject(geoObject, labelCollection).then(function () {
+                                _this2._analyseLabelData(geoObject);
+                            });
+                        } else {
+                            _this2._analyseLabelData(geoObject);
+                        }
+                    });
+                    resolve();
                 });
             });
         };
@@ -133,11 +148,11 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
         };
 
         Polylabel.prototype._calculateGeoObject = function _calculateGeoObject(geoObject, labelCollection) {
-            var _this2 = this;
+            var _this3 = this;
 
             return new Promise(function (resolve) {
-                var options = _this2._getOptions(geoObject);
-                var properties = _this2._getProperties(geoObject);
+                var options = _this3._getOptions(geoObject);
+                var properties = _this3._getProperties(geoObject);
                 var labelData = createDefaultLabelData();
                 setCenter(labelData, geoObject, properties);
                 var label = createLabel(options);
@@ -150,7 +165,7 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
                         top: -(size.height / 2),
                         left: -(size.width / 2)
                     });
-                    setZoomVisibility(_this2._map, labelData, geoObject, size, options.labelForceVisibleZoom);
+                    setZoomVisibility(_this3._map, labelData, geoObject, size, options.labelForceVisibleZoom);
                     labelData.label = label;
                     geoObject.properties.set('labelData', labelData);
                     resolve();
@@ -179,17 +194,17 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
         };
 
         Polylabel.prototype._initMapListeners = function _initMapListeners() {
-            var _this3 = this;
+            var _this4 = this;
 
             this._map.events.add('boundschange', function (event) {
                 if (event.get('newZoom') !== event.get('oldZoom')) {
-                    _this3._calculateCollections();
+                    _this4._calculateCollections();
                 }
             });
         };
 
         Polylabel.prototype._initCollectionListeners = function _initCollectionListeners() {
-            var _this4 = this;
+            var _this5 = this;
 
             this._collections.events.add(['add', 'remove'], function (event) {
                 switch (event.get('type')) {
@@ -197,11 +212,16 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
                         {}
                     case 'remove':
                         {
-                            _this4._calculateCollections(true);
+                            _this5._calculateCollections(true);
                             break;
                         }
                 }
             });
+        };
+
+        Polylabel.prototype._deleteListeners = function _deleteListeners() {
+            this._collections.events.remove(['add', 'remove']);
+            this._map.events.remove('boundschange');
         };
 
         return Polylabel;
