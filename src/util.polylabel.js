@@ -11,24 +11,28 @@ class Polylabel {
     constructor(map, collections) {
         this._map = map;
         this._collections = collections;
-        this._labelsCollection = new ymaps.GeoObjectCollection();
+        this._labelsCollections = new ymaps.GeoObjectCollection();
         this._initData();
     }
 
     _initData() {
         this._initMapListeners();
         this._calculateCollections(true);
+        this._initCollectionListeners();
     }
 
     _calculateCollections(isFirstCals) {
         if (isFirstCals) {
-            this._labelsCollection.options.set({pane: 'phantom'});
-            this._map.geoObjects.add(this._labelsCollection);
+            this._labelsCollections.options.set({pane: 'phantom'});
+            this._labelsCollections.removeAll();
+            this._map.geoObjects.add(this._labelsCollections);
         }
         this._collections.each((collection) => {
+            let labelCollection = new ymaps.GeoObjectCollection();
+            this._labelsCollections.add(labelCollection);
             collection.each((geoObject) => {
                 if (isFirstCals) {
-                    this._calculateGeoObject(geoObject).then(()=>{
+                    this._calculateGeoObject(geoObject, labelCollection).then(() => {
                         this._analyseLabelData(geoObject);
                     });
                 } else {
@@ -50,15 +54,14 @@ class Polylabel {
         }
     }
 
-    _calculateGeoObject(geoObject) {
+    _calculateGeoObject(geoObject, labelCollection) {
         return new Promise(resolve => {
             const options = this._getOptions(geoObject);
             const properties = this._getProperties(geoObject);
             let labelData = createDefaultLabelData();
             setCenter(labelData, geoObject, properties);
             const label = createLabel(options);
-            this._labelsCollection.add(label);
-
+            labelCollection.add(label);
             label.getOverlay().then((overlay) => {
                 overlay.getLayout().then(layout => {
                     const size = layout._element.firstChild.getBoundingClientRect();
@@ -99,6 +102,18 @@ class Polylabel {
         this._map.events.add('boundschange', (event) => {
             if (event.get('newZoom') !== event.get('oldZoom')) {
                 this._calculateCollections();
+            }
+        });
+    }
+
+    _initCollectionListeners() {
+        this._collections.events.add(['add', 'remove'], (event) => {
+            switch (event.get('type')) {
+                case 'add': {}
+                case 'remove': {
+                    this._calculateCollections(true);
+                    break;
+                }
             }
         });
     }

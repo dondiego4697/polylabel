@@ -5,7 +5,7 @@ module.exports = function (config) {
         // list of files / patterns to load in the browser
         files: [
             'https://api-maps.yandex.ru/2.1/?lang=ru_RU&load=package.full,util.dom.style',
-            { pattern: 'src/*.js', include: true },
+            { pattern: 'build/util.polylabel.js', include: true },
             { pattern: 'test/*.js', include: true }
         ],
         exclude: [],

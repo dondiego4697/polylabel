@@ -1,14 +1,15 @@
 describe('util.polylabel', function () {
-    var htmlElems;
-    var map;
+    let htmlElem;
+    let map;
+    let mainObjectCollection;
 
     before(function (done) {
-        htmlElems = [];
         var htmlElem = document.createElement('h6');
-        htmlElem.innerText = 'asdas';
-        htmlElems.push(htmlElem);
+        htmlElem.style.margin = 0;
+        htmlElem.innerText = '1';
         ymaps.ready(['util.polylabel']).then(function () {
             createMap();
+            createCollections();
             done();
         });
     });
@@ -18,24 +19,50 @@ describe('util.polylabel', function () {
         done();
     });
 
-    it('Метка должна быть видна', function () {
-        map.geoObjects.add(createGeoObject());
-        ymaps.util.polylabel(map.geoObjects, htmlElems, map);
-        expect(map.geoObjects.getLength()).to.equal(2);
+    it('Метка должна быть видна', function (done) {
+        let GO = createGeoObject();
+        GO.options.set({ labelHtml: htmlElem });
+        mainObjectCollection.add(GO);
+        new ymaps.util.polylabel(map, mainObjectCollection);
+        console.log(map.geoObjects.get(0).getLength());
+        done();
+        //expect(map.geoObjects.getLength()).to.equal(2);
     });
 
-    it('Метка не должна видна', function () {
-        map.setZoom(1).then(function () {
-            map.geoObjects.add(createGeoObject());
-            ymaps.util.polylabel(map.geoObjects, htmlElems, map);
-            expect(map.geoObjects.getLength()).to.equal(1);
-        });
-    });
+    function createGeoObject() {
+        return new ymaps.GeoObject(
+            {
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [
+                        [
+                            [55.75, 37.80],
+                            [55.80, 37.90],
+                            [55.75, 38.00],
+                            [55.70, 38.00],
+                            [55.70, 37.80]
+                        ]
+                    ],
+                    fillRule: 'nonZero'
+                },
+                properties: {}
+            },
+            {
+                fillColor: '#ffff0022',
+                strokeColor: '#3caa3c88',
+                strokeWidth: 7
+            });
+    }
+
+    function createCollections() {
+        mainObjectCollection = new ymaps.GeoObjectCollection();
+        map.geoObjects.add(mainObjectCollection);
+    }
 
     function createMap() {
         map = new ymaps.Map('map', {
             center: [0, 0],
-            zoom: 2
+            zoom: 10
         }, {});
     }
 
@@ -43,23 +70,5 @@ describe('util.polylabel', function () {
         if (map) {
             map.destroy();
         }
-    }
-
-    function createGeoObject() {
-        return new ymaps.GeoObject({
-            geometry: {
-                type: 'Polygon',
-                coordinates: [
-                    [
-                        [73.6, 69.28],
-                        [70.73, 92],
-                        [57, 92],
-                        [57, 35.9],
-                        [73.6, 69.28]
-                    ]
-                ],
-                fillRule: 'nonZero'
-            }
-        }, {});
     }
 });

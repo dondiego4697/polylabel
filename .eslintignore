@@ -4,3 +4,4 @@ Gruntfile.js
 src/calculateArea.min.js
 karma.conf.js
 builder/
+test/
