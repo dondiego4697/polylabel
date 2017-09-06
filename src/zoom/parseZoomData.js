@@ -11,12 +11,12 @@ function parseZoomData(zoomData, pIsOnlyVisible) {
     onlyVisibleZooms = [];
 
     let zoom = createDefZoomObj();
-    if (typeof zoomData === 'number' || (!isNaN(Number(zoomData)) && zoomData !== null)) {
-        parseNumber(zoom, Number(zoomData));
-        checkOnOnlyVisible(Number(zoomData));
+    if (typeof zoomData === 'number') {
+        parseNumber(zoom, zoomData);
+        checkOnOnlyVisible(zoomData);
     } else if (Array.isArray(zoomData)) {
         parseArray(zoom, zoomData);
-    } else if (typeof zoomData === 'string') {
+    } else if (typeof zoomData === 'string' && zoomData !== 'default') {
         if (parseString(zoom, zoomData) === 'err') {
             return zoom;
         }
@@ -33,9 +33,9 @@ function parseNumber(target, zoom) {
 
 function parseArray(target, zoom) {
     zoom.forEach(z => {
-        if (typeof z === 'number' || (!isNaN(Number(z)) && z !== null)) {
-            parseNumber(target, Number(z));
-            checkOnOnlyVisible(Number(z));
+        if (typeof z === 'number') {
+            parseNumber(target, z);
+            checkOnOnlyVisible(z);
         } else if (typeof z === 'string') {
             parseString(target, z);
         }
@@ -43,6 +43,11 @@ function parseArray(target, zoom) {
 }
 
 function parseString(target, zoom) {
+    if (!isNaN(Number(zoom))) {
+        target[Number(zoom)] = true;
+        checkOnOnlyVisible(Number(zoom));
+        return;
+    }
     const zoomRange = zoom.split('_').map(Number);
     if (isNaN(zoomRange[0]) || isNaN(zoomRange[1])) {
         return 'err';

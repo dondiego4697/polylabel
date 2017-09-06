@@ -83,7 +83,7 @@
                 mainObjectCollection.get(1).each(function (geoObject) {
                     /* if ([130, 131, 132, 133, 134].includes(i)) {
                         //geoObject.options.set({ labelForceVisibleZoom: '0_100' });
-                        //geoObject.options.set({ labelForceVisibleZoom: ['0_1', '3_5'] });
+                        //geoObject.options.set({ labelForceVisibleZoom: ['0', 1, '3_5',] });
                     } else if ([150, 160, 170, 180, 190].includes(i)) {
                         geoObject.options.set({ labelForceVisibleZoom: '0_100' });
                         geoObject.properties.set({
@@ -100,14 +100,12 @@
                 let go = createGeoObject();
                 go.options.set({ labelHtml: createLabel('new') });
 
-                setTimeout(() => {
-                    console.log('add');
+                /* setTimeout(() => {
                     testC.add(go);
                 }, 5000);
                 setTimeout(() => {
-                    console.log('remove');
                     mainObjectCollection.get(1).remove(mainObjectCollection.get(1).get(0));
-                }, 10000);
+                }, 10000); */
             });
         });
     </script>

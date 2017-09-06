@@ -5,7 +5,6 @@
   "main": "build/util.polulabel.js",
   "scripts": {
     "test": "CHROME_BIN=/usr/bin/chromium-browser ./node_modules/karma/bin/karma start karma.conf.js",
-    "build": "webpack --config webpack.config.js -w",
     "lint": "eslint ."
   },
   "author": "",

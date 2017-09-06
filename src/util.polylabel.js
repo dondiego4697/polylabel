@@ -28,8 +28,11 @@ class Polylabel {
             this._map.geoObjects.add(this._labelsCollections);
         }
         this._collections.each((collection) => {
-            let labelCollection = new ymaps.GeoObjectCollection();
-            this._labelsCollections.add(labelCollection);
+            let labelCollection;
+            if (isFirstCals) {
+                labelCollection = new ymaps.GeoObjectCollection();
+                this._labelsCollections.add(labelCollection);
+            }
             collection.each((geoObject) => {
                 if (isFirstCals) {
                     this._calculateGeoObject(geoObject, labelCollection).then(() => {
@@ -62,18 +65,16 @@ class Polylabel {
             setCenter(labelData, geoObject, properties);
             const label = createLabel(options);
             labelCollection.add(label);
-            label.getOverlay().then((overlay) => {
-                overlay.getLayout().then(layout => {
-                    const size = layout._element.firstChild.getBoundingClientRect();
-                    label.properties.set({
-                        top: -(size.height / 2),
-                        left: -(size.width / 2)
-                    });
-                    setZoomVisibility(this._map, labelData, geoObject, size, options.labelForceVisibleZoom);
-                    labelData.label = label;
-                    geoObject.properties.set('labelData', labelData);
-                    resolve();
+            label.getOverlay().then(overlay => overlay.getLayout()).then(layout => {
+                const size = layout._element.firstChild.getBoundingClientRect();
+                label.properties.set({
+                    top: -(size.height / 2),
+                    left: -(size.width / 2)
                 });
+                setZoomVisibility(this._map, labelData, geoObject, size, options.labelForceVisibleZoom);
+                labelData.label = label;
+                geoObject.properties.set('labelData', labelData);
+                resolve();
             });
         });
     }
@@ -83,7 +84,7 @@ class Polylabel {
         const options = obj.options;
         const result = {};
         mainOpts.forEach((key) => {
-            result[key] = options.get(key, null);
+            result[key] = options.get(key, 'default');
         });
         return result;
     }
@@ -93,7 +94,7 @@ class Polylabel {
         const properties = obj.properties;
         const result = {};
         mainOpts.forEach((key) => {
-            result[key] = properties.get(key, null);
+            result[key] = properties.get(key, 'default');
         });
         return result;
     }
@@ -109,7 +110,7 @@ class Polylabel {
     _initCollectionListeners() {
         this._collections.events.add(['add', 'remove'], (event) => {
             switch (event.get('type')) {
-                case 'add': {}
+                case 'add': { }
                 case 'remove': {
                     this._calculateCollections(true);
                     break;

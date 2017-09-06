@@ -9,7 +9,7 @@ function setCenter(target, geoObject, properties) {
     target.autoCenter = autoCenterData.center;
     target.polygonIndex = autoCenterData.index;
 
-    if (labelCenterCoords) {
+    if (labelCenterCoords !== 'default') {
         if (Object.prototype.toString.call(labelCenterCoords) !== '[object Object]') {
             throw new Error('Center coords is not object');
         }

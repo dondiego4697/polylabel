@@ -8,7 +8,7 @@ ymaps.modules.define('setCenter', ['getPolesOfInaccessibility', 'parseZoomData']
         target.autoCenter = autoCenterData.center;
         target.polygonIndex = autoCenterData.index;
 
-        if (labelCenterCoords) {
+        if (labelCenterCoords !== 'default') {
             if (Object.prototype.toString.call(labelCenterCoords) !== '[object Object]') {
                 throw new Error('Center coords is not object');
             }
@@ -40,21 +40,22 @@ ymaps.modules.define('createLabel', [], function (_provide) {
             labelTextClassName = options.labelTextClassName;
 
         var result = void 0;
-        if (labelHtml) {
+        if (labelHtml !== 'default') {
             result = labelHtml;
         } else {
             var label = document.createElement('div');
-            label.innerHTML = labelText;
-            if (labelTextClassName) {
+            label.innerHTML = labelText !== 'default' ? labelText : null;
+            if (labelTextClassName !== 'default') {
                 label.className = labelTextClassName;
             }
             result = label;
         }
-        var LayoutClass = ymaps.templateLayoutFactory.createClass('<div style="position: absolute; top: {{properties.top}}px; ' + 'left: {{properties.left}}px">$[properties.html]</div>');
+        var LayoutClass = ymaps.templateLayoutFactory.createClass('<div {% style %}position: {{properties.position}}; top: {{properties.top}}px;' + 'left: {{properties.left}}px; {% endstyle %}>$[properties.html]</div>');
         return new ymaps.Placemark([0, 0], {
             html: result.outerHTML,
             top: 0,
-            left: 0
+            left: 0,
+            position: 'absolute'
         }, {
             iconLayout: LayoutClass
         });
@@ -98,8 +99,11 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
                 this._map.geoObjects.add(this._labelsCollections);
             }
             this._collections.each(function (collection) {
-                var labelCollection = new ymaps.GeoObjectCollection();
-                _this._labelsCollections.add(labelCollection);
+                var labelCollection = void 0;
+                if (isFirstCals) {
+                    labelCollection = new ymaps.GeoObjectCollection();
+                    _this._labelsCollections.add(labelCollection);
+                }
                 collection.each(function (geoObject) {
                     if (isFirstCals) {
                         _this._calculateGeoObject(geoObject, labelCollection).then(function () {
@@ -139,17 +143,17 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
                 var label = createLabel(options);
                 labelCollection.add(label);
                 label.getOverlay().then(function (overlay) {
-                    overlay.getLayout().then(function (layout) {
-                        var size = layout._element.firstChild.getBoundingClientRect();
-                        label.properties.set({
-                            top: -(size.height / 2),
-                            left: -(size.width / 2)
-                        });
-                        setZoomVisibility(_this2._map, labelData, geoObject, size, options.labelForceVisibleZoom);
-                        labelData.label = label;
-                        geoObject.properties.set('labelData', labelData);
-                        resolve();
+                    return overlay.getLayout();
+                }).then(function (layout) {
+                    var size = layout._element.firstChild.getBoundingClientRect();
+                    label.properties.set({
+                        top: -(size.height / 2),
+                        left: -(size.width / 2)
                     });
+                    setZoomVisibility(_this2._map, labelData, geoObject, size, options.labelForceVisibleZoom);
+                    labelData.label = label;
+                    geoObject.properties.set('labelData', labelData);
+                    resolve();
                 });
             });
         };
@@ -159,7 +163,7 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
             var options = obj.options;
             var result = {};
             mainOpts.forEach(function (key) {
-                result[key] = options.get(key, null);
+                result[key] = options.get(key, 'default');
             });
             return result;
         };
@@ -169,7 +173,7 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
             var properties = obj.properties;
             var result = {};
             mainOpts.forEach(function (key) {
-                result[key] = properties.get(key, null);
+                result[key] = properties.get(key, 'default');
             });
             return result;
         };
@@ -748,12 +752,12 @@ ymaps.modules.define('parseZoomData', ['util.array', 'config'], function (_provi
         onlyVisibleZooms = [];
 
         var zoom = createDefZoomObj();
-        if (typeof zoomData === 'number' || !isNaN(Number(zoomData)) && zoomData !== null) {
-            parseNumber(zoom, Number(zoomData));
-            checkOnOnlyVisible(Number(zoomData));
+        if (typeof zoomData === 'number') {
+            parseNumber(zoom, zoomData);
+            checkOnOnlyVisible(zoomData);
         } else if (_utilArray.isArray(zoomData)) {
             parseArray(zoom, zoomData);
-        } else if (typeof zoomData === 'string') {
+        } else if (typeof zoomData === 'string' && zoomData !== 'default') {
             if (parseString(zoom, zoomData) === 'err') {
                 return zoom;
             }
@@ -770,9 +774,9 @@ ymaps.modules.define('parseZoomData', ['util.array', 'config'], function (_provi
 
     function parseArray(target, zoom) {
         zoom.forEach(function (z) {
-            if (typeof z === 'number' || !isNaN(Number(z)) && z !== null) {
-                parseNumber(target, Number(z));
-                checkOnOnlyVisible(Number(z));
+            if (typeof z === 'number') {
+                parseNumber(target, z);
+                checkOnOnlyVisible(z);
             } else if (typeof z === 'string') {
                 parseString(target, z);
             }
@@ -780,6 +784,11 @@ ymaps.modules.define('parseZoomData', ['util.array', 'config'], function (_provi
     }
 
     function parseString(target, zoom) {
+        if (!isNaN(Number(zoom))) {
+            target[Number(zoom)] = true;
+            checkOnOnlyVisible(Number(zoom));
+            return;
+        }
         var zoomRange = zoom.split('_').map(Number);
         if (isNaN(zoomRange[0]) || isNaN(zoomRange[1])) {
             return 'err';
