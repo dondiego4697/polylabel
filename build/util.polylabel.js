@@ -23,10 +23,12 @@ ymaps.modules.define('setCenter', ['getPolesOfInaccessibility', 'parseZoomData']
 });
 //# sourceMappingURL=setCenter.ym.js.map
 
-ymaps.modules.define("config", [], function (_provide) {
+ymaps.modules.define('config', [], function (_provide) {
     _provide({
         MIN_ZOOM: 0,
-        MAX_ZOOM: 19
+        MAX_ZOOM: 19,
+        options: ['labelHtml', 'labelText', 'labelTextClassName', 'labelTextSize', 'outlineColor', 'textColor', 'maxFitTextSize'],
+        properties: ['labelCenterCoords']
     });
 });
 //# sourceMappingURL=config.ym.js.map
@@ -37,13 +39,19 @@ ymaps.modules.define('createLabel', [], function (_provide) {
     function createLabel(options) {
         var labelHtml = options.labelHtml,
             labelText = options.labelText,
-            labelTextClassName = options.labelTextClassName;
+            labelTextClassName = options.labelTextClassName,
+            labelTextSize = options.labelTextSize,
+            outlineColor = options.outlineColor,
+            textColor = options.textColor;
 
         var result = void 0;
         if (labelHtml !== 'default') {
             result = labelHtml;
         } else {
             var label = document.createElement('div');
+            label.style.fontSize = labelTextSize;
+            label.style.color = textColor;
+            label.style.textShadow = '\n            1px 1px 0 ' + outlineColor + ',\n            -1px -1px 0 ' + outlineColor + ',\n            1px -1px 0 ' + outlineColor + ',\n            -1px 1px 0 ' + outlineColor;
             label.innerHTML = labelText !== 'default' ? labelText : null;
             if (labelTextClassName !== 'default') {
                 label.className = labelTextClassName;
@@ -51,6 +59,7 @@ ymaps.modules.define('createLabel', [], function (_provide) {
             result = label;
         }
         var LayoutClass = ymaps.templateLayoutFactory.createClass('<div {% style %}position: {{properties.position}}; top: {{properties.top}}px;' + 'left: {{properties.left}}px; {% endstyle %}>$[properties.html]</div>');
+
         return new ymaps.Placemark([0, 0], {
             html: result.outerHTML,
             top: 0,
@@ -63,7 +72,177 @@ ymaps.modules.define('createLabel', [], function (_provide) {
 });
 //# sourceMappingURL=createLabel.ym.js.map
 
-ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefaultLabelData', 'setZoomVisibility'], function (_provide, createLabel, setCenter, createDefaultLabelData, setZoomVisibility) {
+ymaps.modules.define('createLabelLayout', [], function (_provide) {
+    _provide(function () {
+        return ymaps.templateLayoutFactory.createClass('<div {% style %}position: {{properties.position}}; top: {{properties.top}}px;' + 'left: {{properties.left}}px; {% endstyle %}>$[properties.html]</div>');
+    });
+});
+//# sourceMappingURL=createLabelLayout.ym.js.map
+
+ymaps.modules.define('Label', ['util.extend'], function (_provide, _utilExtend) {
+    function _classCallCheck(instance, Constructor) {
+        if (!(instance instanceof Constructor)) {
+            throw new TypeError("Cannot call a class as a function");
+        }
+    }
+
+    var Label = function () {
+        function Label(geoObject, options, LayoutClass) {
+            _classCallCheck(this, Label);
+
+            this._geoObject = geoObject;
+            this._options = options;
+            this._label = null;
+            this._LayoutClass = LayoutClass;
+            this._initLabel();
+        }
+
+        Label.prototype.get = function get() {
+            return this._label;
+        };
+
+        Label.prototype.initEvents = function initEvents() {
+            this._label.events.add('click', this.__labelClick, this);
+        };
+
+        Label.prototype.culcLabelSize = function culcLabelSize(size) {
+            var h = size.height / 2;
+            var w = size.width / 2;
+            this._label = this._createLabel({
+                properties: _utilExtend({}, this._label.properties.getAll(), {
+                    top: -h,
+                    left: -w
+                }),
+                options: {
+                    iconShape: {
+                        type: 'Rectangle',
+                        coordinates: [[-w, -h], [w, h]]
+                    }
+                }
+            });
+        };
+
+        Label.prototype._initLabel = function _initLabel() {
+            var labelHtml = this._options.labelHtml;
+
+            var result = void 0;
+            if (labelHtml !== 'default') {
+                result = labelHtml;
+            } else {
+                result = this._createLabelWithPresets();
+            }
+            this._label = this._createLabel({
+                properties: {
+                    html: result.outerHTML
+                }
+            });
+        };
+
+        Label.prototype._createLabel = function _createLabel(params) {
+            var properties = params.properties,
+                options = params.options;
+
+            properties = _utilExtend({}, {
+                top: 0,
+                left: 0,
+                position: 'absolute'
+            }, properties);
+            options = _utilExtend({}, {
+                iconLayout: this._LayoutClass
+            }, options);
+            return new ymaps.Placemark([0, 0], properties, options);
+        };
+
+        Label.prototype._createLabelWithPresets = function _createLabelWithPresets() {
+            var _options = this._options,
+                labelText = _options.labelText,
+                labelTextClassName = _options.labelTextClassName,
+                labelTextSize = _options.labelTextSize,
+                outlineColor = _options.outlineColor,
+                textColor = _options.textColor;
+
+
+            var label = document.createElement('div');
+            label.style.fontSize = labelTextSize;
+            label.style.color = textColor;
+            label.style.textShadow = '\n            1px 1px 0 ' + outlineColor + ',\n            -1px -1px 0 ' + outlineColor + ',\n            1px -1px 0 ' + outlineColor + ',\n            -1px 1px 0 ' + outlineColor;
+            label.innerHTML = labelText !== 'default' ? labelText : null;
+            if (labelTextClassName !== 'default') {
+                label.className = labelTextClassName;
+            }
+            return label;
+        };
+
+        Label.prototype.__labelClick = function __labelClick(event) {
+            this._geoObject.events.fire('labelClick', {
+                targetLabel: event.get('target')
+            });
+        };
+
+        Label.prototype._removeClickEvent = function _removeClickEvent() {
+            this._label.events.remove('click', this.__labelClick, this);
+        };
+
+        return Label;
+    }();
+
+    _provide(Label);
+});
+//# sourceMappingURL=Label.ym.js.map
+
+ymaps.modules.define('setPresets', ['util.extend'], function (_provide, _utilExtend) {
+    var DATA = {
+        big: createFontSize('20px'),
+        small: createFontSize('12px'),
+        blackInWhiteOutline: createColorPreset('black', 'white'),
+        whiteInBlackOutline: createColorPreset('white', 'black')
+    };
+    var PREFIX = 'polylabel#';
+
+    _provide(function (parent) {
+        var presetStorage = ymaps.option.presetStorage;
+
+        parent.options.set('preset', 'polylabel#default');
+        presetStorage.add('polylabel#default', _utilExtend({}, createFontSize('16px'), createColorPreset('black')));
+
+        createPresets(presetStorage);
+    });
+
+    function createPresets(presetStorage) {
+        var sizes = ['big', 'small'];
+        var colors = ['blackInWhiteOutline', 'whiteInBlackOutline'];
+
+        sizes.forEach(function (size) {
+            presetStorage.add('' + PREFIX + size, _utilExtend({}, DATA[size]));
+        });
+
+        colors.forEach(function (color) {
+            presetStorage.add('' + PREFIX + color, _utilExtend({}, DATA[color]));
+        });
+
+        sizes.forEach(function (size) {
+            colors.forEach(function (color) {
+                presetStorage.add('' + PREFIX + size + '|' + color, _utilExtend({}, DATA[size], DATA[color]));
+            });
+        });
+    }
+
+    function createFontSize(labelTextSize) {
+        return {
+            labelTextSize: labelTextSize
+        };
+    }
+
+    function createColorPreset(textColor, outlineColor) {
+        return {
+            textColor: textColor,
+            outlineColor: outlineColor
+        };
+    }
+});
+//# sourceMappingURL=setPresets.ym.js.map
+
+ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabelData', 'setZoomVisibility', 'setPresets', 'config', 'createLabelLayout'], function (_provide, Label, setCenter, createDefaultLabelData, setZoomVisibility, setPresets, CONFIG, createLabelLayout) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -82,6 +261,7 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
             this._collections = collections;
             this._labelsCollections = new ymaps.GeoObjectCollection();
             this._map.geoObjects.add(this._labelsCollections);
+            this._labelLayout = createLabelLayout();
             this._initData();
         }
 
@@ -97,6 +277,7 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
         Polylabel.prototype._initData = function _initData() {
             var _this = this;
 
+            setPresets(this._collections);
             this._calculateCollections(true).then(function () {
                 _this._initMapListeners();
                 _this._initCollectionListeners();
@@ -108,8 +289,7 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
 
             return new Promise(function (resolve) {
                 if (isFirstCals) {
-                    _this2._labelsCollections.removeAll();
-                    _this2._labelsCollections.options.set({ pane: 'phantom' });
+                    _this2._clearLabelCollections();
                 }
                 _this2._collections.each(function (collection) {
                     var labelCollection = void 0;
@@ -141,32 +321,37 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
 
             if (labelData.visibleForce || labelData.visible) {
                 label.geometry.setCoordinates(labelData.center || autoCenter);
-                label.options.set({ pane: 'places' });
+                label.options.set({
+                    pane: 'places'
+                });
             } else {
-                label.options.set({ pane: 'phantom' });
+                label.options.set({
+                    pane: 'phantom'
+                });
             }
         };
 
         Polylabel.prototype._calculateGeoObject = function _calculateGeoObject(geoObject, labelCollection) {
             var _this3 = this;
 
+            var options = this._getOptions(geoObject);
+            var properties = this._getProperties(geoObject);
+            var labelData = createDefaultLabelData();
+            setCenter(labelData, geoObject, properties);
+            var labelInst = new Label(geoObject, options, this._labelLayout);
+            labelCollection.add(labelInst.get());
+
             return new Promise(function (resolve) {
-                var options = _this3._getOptions(geoObject);
-                var properties = _this3._getProperties(geoObject);
-                var labelData = createDefaultLabelData();
-                setCenter(labelData, geoObject, properties);
-                var label = createLabel(options);
-                labelCollection.add(label);
-                label.getOverlay().then(function (overlay) {
+                labelInst.get().getOverlay().then(function (overlay) {
                     return overlay.getLayout();
                 }).then(function (layout) {
                     var size = layout._element.firstChild.getBoundingClientRect();
-                    label.properties.set({
-                        top: -(size.height / 2),
-                        left: -(size.width / 2)
-                    });
+                    labelCollection.remove(labelInst.get());
+                    labelInst.culcLabelSize(size);
+                    labelCollection.add(labelInst.get());
+                    labelInst.initEvents();
                     setZoomVisibility(_this3._map, labelData, geoObject, size, options.labelForceVisibleZoom);
-                    labelData.label = label;
+                    labelData.label = labelInst.get();
                     geoObject.properties.set('labelData', labelData);
                     resolve();
                 });
@@ -174,7 +359,7 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
         };
 
         Polylabel.prototype._getOptions = function _getOptions(obj) {
-            var mainOpts = ['labelForceVisibleZoom', 'labelTextClassName', 'labelHtml', 'labelText'];
+            var mainOpts = CONFIG.options;
             var options = obj.options;
             var result = {};
             mainOpts.forEach(function (key) {
@@ -184,44 +369,51 @@ ymaps.modules.define('util.polylabel', ['createLabel', 'setCenter', 'createDefau
         };
 
         Polylabel.prototype._getProperties = function _getProperties(obj) {
-            var mainOpts = ['labelCenterCoords'];
+            var mainProperties = CONFIG.properties;
             var properties = obj.properties;
             var result = {};
-            mainOpts.forEach(function (key) {
+            mainProperties.forEach(function (key) {
                 result[key] = properties.get(key, 'default');
             });
             return result;
         };
 
-        Polylabel.prototype._initMapListeners = function _initMapListeners() {
-            var _this4 = this;
-
-            this._map.events.add('boundschange', function (event) {
-                if (event.get('newZoom') !== event.get('oldZoom')) {
-                    _this4._calculateCollections();
-                }
+        Polylabel.prototype._clearLabelCollections = function _clearLabelCollections() {
+            this._labelsCollections.removeAll();
+            this._labelsCollections.options.set({
+                pane: 'phantom'
             });
+        };
+
+        Polylabel.prototype._initMapListeners = function _initMapListeners() {
+            this._map.events.add('boundschange', this.__mapBoundsChange, this);
         };
 
         Polylabel.prototype._initCollectionListeners = function _initCollectionListeners() {
-            var _this5 = this;
+            this._collections.events.add(['add', 'remove'], this.__collectionEvents, this);
+        };
 
-            this._collections.events.add(['add', 'remove'], function (event) {
-                switch (event.get('type')) {
-                    case 'add':
-                        {}
-                    case 'remove':
-                        {
-                            _this5._calculateCollections(true);
-                            break;
-                        }
-                }
-            });
+        Polylabel.prototype.__mapBoundsChange = function __mapBoundsChange(event) {
+            if (event.get('newZoom') !== event.get('oldZoom')) {
+                this._calculateCollections();
+            }
+        };
+
+        Polylabel.prototype.__collectionEvents = function __collectionEvents(event) {
+            switch (event.get('type')) {
+                case 'add':
+                    {}
+                case 'remove':
+                    {
+                        this._calculateCollections(true);
+                        break;
+                    }
+            }
         };
 
         Polylabel.prototype._deleteListeners = function _deleteListeners() {
-            this._collections.events.remove(['add', 'remove']);
-            this._map.events.remove('boundschange');
+            this._collections.events.remove(['add', 'remove'], this.__collectionEvents, this);
+            this._map.events.remove('boundschange', this.__mapBoundsChange, this);
         };
 
         return Polylabel;
@@ -460,9 +652,7 @@ ymaps.modules.define('createDefaultLabelData', ['config'], function (_provide, C
     var MIN_ZOOM = CONFIG.MIN_ZOOM,
         MAX_ZOOM = CONFIG.MAX_ZOOM;
 
-    _provide(createDefaultLabelData);
-
-    function createDefaultLabelData() {
+    _provide(function () {
         var i = MIN_ZOOM;
         var result = {
             data: {},
@@ -473,12 +663,13 @@ ymaps.modules.define('createDefaultLabelData', ['config'], function (_provide, C
             result.data[i] = {
                 visible: false,
                 visibleForce: false,
-                center: null
+                center: null,
+                maxFitTextSize: null
             };
             i++;
         }
         return result;
-    }
+    });
 });
 //# sourceMappingURL=createDefaultLabelData.ym.js.map
 
@@ -774,7 +965,6 @@ ymaps.modules.define('parseZoomData', ['util.array', 'config'], function (_provi
         var zoom = createDefZoomObj();
         if (typeof zoomData === 'number') {
             parseNumber(zoom, zoomData);
-            checkOnOnlyVisible(zoomData);
         } else if (_utilArray.isArray(zoomData)) {
             parseArray(zoom, zoomData);
         } else if (typeof zoomData === 'string' && zoomData !== 'default') {
@@ -782,21 +972,18 @@ ymaps.modules.define('parseZoomData', ['util.array', 'config'], function (_provi
                 return zoom;
             }
         }
-        if (isOnlyVisible) {
-            return onlyVisibleZooms;
-        }
-        return zoom;
+        return isOnlyVisible ? onlyVisibleZooms : zoom;
     }
 
     function parseNumber(target, zoom) {
         target[zoom] = true;
+        checkOnOnlyVisible(zoom);
     }
 
     function parseArray(target, zoom) {
         zoom.forEach(function (z) {
             if (typeof z === 'number') {
                 parseNumber(target, z);
-                checkOnOnlyVisible(z);
             } else if (typeof z === 'string') {
                 parseString(target, z);
             }
@@ -841,9 +1028,6 @@ ymaps.modules.define('parseZoomData', ['util.array', 'config'], function (_provi
 //# sourceMappingURL=parseZoomData.ym.js.map
 
 ymaps.modules.define('setZoomVisibility', ['checkPointPosition', 'config', 'parseZoomData'], function (_provide, isInside, CONFIG, parseZoomData) {
-    var MIN_ZOOM = CONFIG.MIN_ZOOM,
-        MAX_ZOOM = CONFIG.MAX_ZOOM;
-
     _provide(setZoomVisibility);
 
     function setZoomVisibility(map, target, geoObject, labelSize, labelForceVisibleZoom) {
@@ -863,15 +1047,14 @@ ymaps.modules.define('setZoomVisibility', ['checkPointPosition', 'config', 'pars
     }
 
     function getFirstZoomInside(map, center, coords, size) {
-        var i = MIN_ZOOM;
-        var j = MAX_ZOOM;
+        var i = CONFIG.MIN_ZOOM,
+            j = CONFIG.MAX_ZOOM;
+
         var zoom = void 0;
-        var result = void 0;
         while (i < j) {
             zoom = Math.floor((i + j) / 2);
             var elemPoints = getElemPoints(map, center, zoom, size);
-            result = checkIsInside(map, coords, elemPoints, zoom);
-            if (result) {
+            if (checkIsInside(map, coords, elemPoints, zoom)) {
                 j = zoom;
             } else {
                 i = zoom + 1;
@@ -882,8 +1065,9 @@ ymaps.modules.define('setZoomVisibility', ['checkPointPosition', 'config', 'pars
 
     function getElemPoints(map, center, zoom, size) {
         var centerProj = map.options.get('projection').toGlobalPixels(center, zoom);
-        var w = size.width;
-        var h = size.height;
+        var w = size.width,
+            h = size.height;
+
         var elemPoints = [];
         elemPoints.push([centerProj[0] - w / 2, centerProj[1] - h / 2], [centerProj[0] - w / 2, centerProj[1] + h / 2], [centerProj[0] + w / 2, centerProj[1] - h / 2], [centerProj[0] + w / 2, centerProj[1] + h / 2]);
         return elemPoints;

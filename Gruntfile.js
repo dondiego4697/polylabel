@@ -4,11 +4,13 @@ module.exports = function (grunt) {
         'center/setCenter',
         'util/calculateArea',
         'util/checkPointPosition',
-        'label/createLabel',
+        'label/Label',
+        'label/createLabelLayout',
         'util/getPolesOfInaccessibility',
         'util/createDefaultLabelData',
         'zoom/setZoomVisibility',
         'zoom/parseZoomData',
+        'presets/setPresets',
         'util.polylabel'
     ];
     const babelFiles = fillFiles(fileNames);

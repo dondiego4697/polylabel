@@ -1,9 +1,7 @@
 import CONFIG from 'config';
 const {MIN_ZOOM, MAX_ZOOM} = CONFIG;
 
-export default createDefaultLabelData;
-
-function createDefaultLabelData() {
+export default function () {
     let i = MIN_ZOOM;
     let result = {
         data: {},
@@ -14,7 +12,8 @@ function createDefaultLabelData() {
         result.data[i] = {
             visible: false,
             visibleForce: false,
-            center: null
+            center: null,
+            maxFitTextSize: null
         };
         i++;
     }

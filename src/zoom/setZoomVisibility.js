@@ -2,8 +2,6 @@ import isInside from 'checkPointPosition';
 import CONFIG from 'config';
 import parseZoomData from 'parseZoomData';
 
-const {MIN_ZOOM, MAX_ZOOM} = CONFIG;
-
 export default setZoomVisibility;
 
 function setZoomVisibility(map, target, geoObject, labelSize, labelForceVisibleZoom) {
@@ -23,15 +21,12 @@ function setZoomVisibility(map, target, geoObject, labelSize, labelForceVisibleZ
 }
 
 function getFirstZoomInside(map, center, coords, size) {
-    let i = MIN_ZOOM;
-    let j = MAX_ZOOM;
+    let {MIN_ZOOM: i, MAX_ZOOM: j} = CONFIG;
     let zoom;
-    let result;
     while (i < j) {
         zoom = Math.floor((i + j) / 2);
         let elemPoints = getElemPoints(map, center, zoom, size);
-        result = checkIsInside(map, coords, elemPoints, zoom);
-        if (result) {
+        if (checkIsInside(map, coords, elemPoints, zoom)) {
             j = zoom;
         } else {
             i = zoom + 1;
@@ -42,8 +37,7 @@ function getFirstZoomInside(map, center, coords, size) {
 
 function getElemPoints(map, center, zoom, size) {
     const centerProj = map.options.get('projection').toGlobalPixels(center, zoom);
-    const w = size.width;
-    const h = size.height;
+    const {width: w, height: h} = size;
     let elemPoints = [];
     elemPoints.push(
         [centerProj[0] - w / 2, centerProj[1] - h / 2],

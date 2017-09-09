@@ -81,19 +81,28 @@
 
                 let i = 0;
                 mainObjectCollection.get(1).each(function (geoObject) {
-                    /* if ([130, 131, 132, 133, 134].includes(i)) {
+                    if ([0, 1, 2, 3, 6].includes(i)) {
+                        /* geoObject.events.add('labelClick', function (event) {
+                            console.log(event);
+                        }); */
+                        //geoObject.options.set('preset', 'polylabel#big|blackInWhiteOutline');
+                        //geoObject.options.set('preset', 'polylabel#big');
                         //geoObject.options.set({ labelForceVisibleZoom: '0_100' });
                         //geoObject.options.set({ labelForceVisibleZoom: ['0', 1, '3_5',] });
-                    } else if ([150, 160, 170, 180, 190].includes(i)) {
-                        geoObject.options.set({ labelForceVisibleZoom: '0_100' });
+                    } else if ([8, 160, 170, 180, 190].includes(i)) {
+                        //geoObject.options.set('preset', 'polylabel#small|whiteInBlackOutline');
+                        //geoObject.options.set('preset', 'polylabel#small');
+                        /* geoObject.options.set({ labelForceVisibleZoom: '0_100' });
                         geoObject.properties.set({
                             labelCenterCoords: {
                                 1: [i - 140, i - 140],
                                 '2_100': [i - 200, i - 200],
                             }
-                        });
-                    } */
-                    geoObject.options.set({ labelHtml: createLabel(i) });
+                        }); */
+                    }
+                    geoObject.options.set({ labelText: geoObject.properties.get('hintContent') });
+                    geoObject.options.set('preset', 'polylabel#blackInWhiteOutline');
+                    //geoObject.options.set({ labelHtml: createLabel(i) });
                     i++;
                 });
                 let polyLabeler = new ymaps.util.polylabel(myMap, mainObjectCollection);

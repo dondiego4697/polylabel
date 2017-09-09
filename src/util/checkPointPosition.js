@@ -1,5 +1,4 @@
 export default isInside;
-
 /**
      * Проверятет находится ли точка внутри геометрии
      * @param {Array[2]} point - Координаты точки.
@@ -26,9 +25,9 @@ function isInside(point, coords) {
  * @param {Array[2]} p1 - Точка ребра.
  */
 function pointClassify(p, p0, p1) {
-    let a = pointMinus(p1, p0);
-    let b = pointMinus(p, p0);
-    let sa = a[0] * b[1] - b[0] * a[1];
+    const a = pointMinus(p1, p0);
+    const b = pointMinus(p, p0);
+    const sa = a[0] * b[1] - b[0] * a[1];
     if (sa > 0) {
         return 'LEFT';
     }

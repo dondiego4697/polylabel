@@ -13,7 +13,6 @@ function parseZoomData(zoomData, pIsOnlyVisible) {
     let zoom = createDefZoomObj();
     if (typeof zoomData === 'number') {
         parseNumber(zoom, zoomData);
-        checkOnOnlyVisible(zoomData);
     } else if (Array.isArray(zoomData)) {
         parseArray(zoom, zoomData);
     } else if (typeof zoomData === 'string' && zoomData !== 'default') {
@@ -21,21 +20,18 @@ function parseZoomData(zoomData, pIsOnlyVisible) {
             return zoom;
         }
     }
-    if (isOnlyVisible) {
-        return onlyVisibleZooms;
-    }
-    return zoom;
+    return isOnlyVisible ? onlyVisibleZooms : zoom;
 }
 
 function parseNumber(target, zoom) {
     target[zoom] = true;
+    checkOnOnlyVisible(zoom);
 }
 
 function parseArray(target, zoom) {
     zoom.forEach(z => {
         if (typeof z === 'number') {
             parseNumber(target, z);
-            checkOnOnlyVisible(z);
         } else if (typeof z === 'string') {
             parseString(target, z);
         }
