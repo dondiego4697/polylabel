@@ -15,7 +15,7 @@ function parseZoomData(zoomData, pIsOnlyVisible) {
         parseNumber(zoom, zoomData);
     } else if (Array.isArray(zoomData)) {
         parseArray(zoom, zoomData);
-    } else if (typeof zoomData === 'string' && zoomData !== 'default') {
+    } else if (typeof zoomData === 'string') {
         if (parseString(zoom, zoomData) === 'err') {
             return zoom;
         }

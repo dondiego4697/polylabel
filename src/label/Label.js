@@ -1,21 +1,23 @@
+import stringReplacer from 'stringReplacer';
 export default class Label {
-    constructor(geoObject, options, LayoutClass) {
+    constructor(geoObject, options, LayoutClass, parentCollection) {
+        if (!geoObject || !LayoutClass || !parentCollection) {
+            throw new Error('wrong argument');
+        }
         this._geoObject = geoObject;
+        this._parentCollection = parentCollection;
         this._options = options;
         this._label = null;
         this._LayoutClass = LayoutClass;
         this._initLabel();
     }
 
-    get() {
+    getPlacemark() {
         return this._label;
     }
 
-    initEvents() {
-        this._label.events.add('click', this.__labelClick, this);
-    }
-
-    culcLabelSize(size) {
+    culculateLabelSize(size) {
+        this.removeFromCollection();
         const h = size.height / 2;
         const w = size.width / 2;
         this._label = this._createLabel({
@@ -23,27 +25,43 @@ export default class Label {
                 top: -h,
                 left: -w
             }),
-            options: {
+            options: Object.assign({}, this._label.options.getAll(), {
                 iconShape: {
                     type: 'Rectangle',
                     coordinates: [[-w, -h], [w, h]]
                 }
-            }
+            })
         });
+        this.addToCollection();
+    }
+
+    removeFromCollection() {
+        if (!this._parentCollection) {
+            return false;
+        }
+        this._parentCollection.remove(this._label);
+    }
+
+    addToCollection() {
+        if (!this._parentCollection) {
+            return false;
+        }
+        this._parentCollection.add(this._label);
     }
 
     _initLabel() {
         const { labelHtml } = this._options;
         let result;
-        if (labelHtml !== 'default') {
+        if (labelHtml) {
             result = labelHtml;
         } else {
             result = this._createLabelWithPresets();
         }
         this._label = this._createLabel({
             properties: {
-                html: result.outerHTML
-            }
+                html: result
+            },
+            options: this._options
         });
     }
 
@@ -67,29 +85,26 @@ export default class Label {
         const {
             labelText, labelTextClassName, labelTextSize, outlineColor, textColor
         } = this._options;
-
-        let label = document.createElement('div');
-        label.style.fontSize = labelTextSize;
-        label.style.color = textColor;
-        label.style.textShadow = `
-            1px 1px 0 ${outlineColor},
-            -1px -1px 0 ${outlineColor},
-            1px -1px 0 ${outlineColor},
-            -1px 1px 0 ${outlineColor}`;
-        label.innerHTML = labelText !== 'default' ? labelText : null;
-        if (labelTextClassName !== 'default') {
-            label.className = labelTextClassName;
-        }
-        return label;
+        const textShadow = `
+        1px 1px 0 ${outlineColor},
+        -1px -1px 0 ${outlineColor},
+        1px -1px 0 ${outlineColor},
+        -1px 1px 0 ${outlineColor}`;
+        const template = '<div class="$1" style="font-size: $2; color: $3; text-shadow: $4">$5</div>';
+        return stringReplacer(template, [labelTextClassName, labelTextSize, textColor, textShadow, labelText]);
     }
 
-    __labelClick(event) {
+    _initEvents() {
+        this._label.events.add('click', this._labelClick, this);
+    }
+
+    _labelClick() {
         this._geoObject.events.fire('labelClick', {
-            targetLabel: event.get('target')
+            targetLabel: this
         });
     }
 
     _removeClickEvent() {
-        this._label.events.remove('click', this.__labelClick, this);
+        this._label.events.remove('click', this._labelClick, this);
     }
 }

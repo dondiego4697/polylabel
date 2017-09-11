@@ -38,7 +38,8 @@
                     "Array.isArray": [
                         "util.array",
                         "isArray"
-                    ]
+                    ],
+                    "Object.keys": "util.objectKeys"
                 }
             }
         ],

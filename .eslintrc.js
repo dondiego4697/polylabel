@@ -3,7 +3,6 @@ module.exports = {
     "root": true,
     "env": {
         "browser": true,
-        "commonjs": true,
         "es6": true,
         "mocha": true
     },
@@ -11,7 +10,8 @@ module.exports = {
         "strict": ["error", "never"],
         "curly": [0, "multi"],
         "no-console": ["error", { allow: ["error"] }],
-        "no-implicit-globals": 0
+        "no-implicit-globals": 0,
+        "no-cond-assign": 0
     },
     "globals": {
         "modules": true,

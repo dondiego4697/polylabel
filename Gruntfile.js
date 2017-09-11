@@ -1,18 +1,6 @@
+const glob = require("glob");
 module.exports = function (grunt) {
-    const fileNames = [
-        'config',
-        'center/setCenter',
-        'util/calculateArea',
-        'util/checkPointPosition',
-        'label/Label',
-        'label/createLabelLayout',
-        'util/getPolesOfInaccessibility',
-        'util/createDefaultLabelData',
-        'zoom/setZoomVisibility',
-        'zoom/parseZoomData',
-        'presets/setPresets',
-        'util.polylabel'
-    ];
+    const fileNames = glob.sync("src/**/*.js");
     const babelFiles = fillFiles(fileNames);
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
@@ -43,7 +31,6 @@ module.exports = function (grunt) {
             tasks: 'default'
         }
     });
-
     grunt.loadNpmTasks('grunt-babel');
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-uglify');
@@ -53,9 +40,12 @@ module.exports = function (grunt) {
 };
 
 function fillFiles(names) {
+    names = names.map(name => {
+        return name.split('/').slice(1).join('/');
+    });
     let result = {};
     names.forEach((fileName) => {
-        result[`build/pre/${fileName}.ym.js`] = `src/${fileName}.js`;
+        result[`build/pre/${fileName}`] = `src/${fileName}`;
     });
     return result;
 }

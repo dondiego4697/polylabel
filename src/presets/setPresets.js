@@ -1,8 +1,8 @@
 const DATA = {
-    big: createFontSize('20px'),
-    small: createFontSize('12px'),
-    blackInWhiteOutline: createColorPreset('black', 'white'),
-    whiteInBlackOutline: createColorPreset('white', 'black')
+    Big: createFontSize('20px'),
+    Small: createFontSize('12px'),
+    BlackInWhiteOutline: createColorPreset('black', 'white'),
+    HhiteInBlackOutline: createColorPreset('white', 'black')
 };
 const PREFIX = 'polylabel#';
 
@@ -16,8 +16,8 @@ export default function (parent) {
 }
 
 function createPresets(presetStorage) {
-    const sizes = ['big', 'small'];
-    const colors = ['blackInWhiteOutline', 'whiteInBlackOutline'];
+    const sizes = ['Big', 'Small'];
+    const colors = ['BlackInWhiteOutline', 'WhiteInBlackOutline'];
 
     sizes.forEach(size => {
         presetStorage.add(`${PREFIX}${size}`, Object.assign({}, DATA[size]));
@@ -29,7 +29,7 @@ function createPresets(presetStorage) {
 
     sizes.forEach(size => {
         colors.forEach(color => {
-            presetStorage.add(`${PREFIX}${size}|${color}`, Object.assign({}, DATA[size], DATA[color]));
+            presetStorage.add(`${PREFIX}${size}${color}`, Object.assign({}, DATA[size], DATA[color]));
         });
     });
 }

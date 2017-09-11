@@ -9,15 +9,13 @@ function setCenter(target, geoObject, properties) {
     target.autoCenter = autoCenterData.center;
     target.polygonIndex = autoCenterData.index;
 
-    if (labelCenterCoords !== 'default') {
-        if (Object.prototype.toString.call(labelCenterCoords) !== '[object Object]') {
-            throw new Error('Center coords is not object');
-        }
-        Object.keys(labelCenterCoords).forEach(key => {
-            const zoomArr = parseZoomData(key, true);
-            zoomArr.forEach(z => {
-                target.data[z].center = labelCenterCoords[key];
-            });
-        });
+    if (Object.prototype.toString.call(labelCenterCoords) !== '[object Object]') {
+        return;
     }
+    Object.keys(labelCenterCoords).forEach(key => {
+        const zoomArr = parseZoomData(key, true);
+        zoomArr.forEach(z => {
+            target.data[z].center = labelCenterCoords[key];
+        });
+    });
 }
