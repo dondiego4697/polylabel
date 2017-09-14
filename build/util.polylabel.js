@@ -1,6 +1,13 @@
-ymaps.modules.define('setCenter', ['util.objectKeys', 'getPolesOfInaccessibility', 'parseZoomData'], function (_provide, _utilObjectKeys, getPolylabelCenter, parseZoomData) {
-    _provide(setCenter);
+ymaps.modules.define('setCenter', ['util.array', 'util.objectKeys', 'getPolesOfInaccessibility', 'parseZoomData'], function (_provide, _utilArray, _utilObjectKeys, getPolylabelCenter, parseZoomData) {
 
+    /**
+     * Set centers for each zoom;
+     * @param {Object} target - Target object containing each zoom in properties.
+     * @param {GeoObject} geoObject
+     * @param {Object} properties
+     * @param {Array | Object} properties.labelCenterCoords - Center data.
+     * May be one point(Array) or for certains zooms(Object).
+    */
     function setCenter(target, geoObject, properties) {
         var labelCenterCoords = properties.labelCenterCoords;
 
@@ -8,16 +15,21 @@ ymaps.modules.define('setCenter', ['util.objectKeys', 'getPolesOfInaccessibility
         target.autoCenter = autoCenterData.center;
         target.polygonIndex = autoCenterData.index;
 
-        if (Object.prototype.toString.call(labelCenterCoords) !== '[object Object]') {
-            return;
-        }
-        _utilObjectKeys(labelCenterCoords).forEach(function (key) {
-            var zoomArr = parseZoomData(key, true);
-            zoomArr.forEach(function (z) {
-                target.data[z].center = labelCenterCoords[key];
+        if (_utilArray.isArray(labelCenterCoords)) {
+            _utilObjectKeys(target.zoomInfo).forEach(function (z) {
+                target.zoomInfo[z].center = labelCenterCoords;
             });
-        });
+        } else if (Object.prototype.toString.call(labelCenterCoords) === '[object Object]') {
+            var data = parseZoomData(labelCenterCoords);
+            _utilObjectKeys(data).forEach(function (z) {
+                if (typeof data[z] !== 'undefined') {
+                    target.zoomInfo[z].center = data[z];
+                }
+            });
+        }
     }
+
+    _provide(setCenter)
 });
 //# sourceMappingURL=setCenter.js.map
 
@@ -32,6 +44,9 @@ ymaps.modules.define('config', [], function (_provide) {
 //# sourceMappingURL=config.js.map
 
 ymaps.modules.define('createLabelLayout', ['templateLayoutFactory'], function (_provide, templateLayoutFactory) {
+    /**
+     * Label layout tamplate
+    */
     var template = templateLayoutFactory.createClass('<div {% style %}position: {{properties.position}}; top: {{properties.top}}px;' + 'left: {{properties.left}}px; {% endstyle %}>$[properties.html]</div>');
 
     _provide(template);
@@ -46,6 +61,13 @@ ymaps.modules.define('Label', ['util.extend', 'stringReplacer'], function (_prov
     }
 
     var Label = function () {
+        /**
+         * Create a Label
+         * @param {GeoObject} geoObject
+         * @param {Object} options
+         * @param {templateLayoutFactory} LayoutClass
+         * @param {GeoObjectCollection} parentCollection
+         */
         function Label(geoObject, options, LayoutClass, parentCollection) {
             _classCallCheck(this, Label);
 
@@ -60,15 +82,20 @@ ymaps.modules.define('Label', ['util.extend', 'stringReplacer'], function (_prov
             this._initLabel();
         }
 
+        /**
+         * @return {Placemark} The instance of Placemark.
+         */
+
+
         Label.prototype.getPlacemark = function getPlacemark() {
             return this._label;
         };
 
-        Label.prototype.culculateLabelSize = function culculateLabelSize(size) {
+        Label.prototype.calculateLabelSize = function calculateLabelSize(size) {
             this.removeFromCollection();
             var h = size.height / 2;
             var w = size.width / 2;
-            this._label = this._createLabel({
+            this._label = Label._createPlacemark({
                 properties: _utilExtend({}, this._label.properties.getAll(), {
                     top: -h,
                     left: -w
@@ -79,7 +106,7 @@ ymaps.modules.define('Label', ['util.extend', 'stringReplacer'], function (_prov
                         coordinates: [[-w, -h], [w, h]]
                     }
                 })
-            });
+            }, this._LayoutClass);
             this.addToCollection();
         };
 
@@ -104,17 +131,17 @@ ymaps.modules.define('Label', ['util.extend', 'stringReplacer'], function (_prov
             if (labelHtml) {
                 result = labelHtml;
             } else {
-                result = this._createLabelWithPresets();
+                result = this._createLabelContentWithPresets();
             }
-            this._label = this._createLabel({
+            this._label = Label._createPlacemark({
                 properties: {
                     html: result
                 },
                 options: this._options
-            });
+            }, this._LayoutClass);
         };
 
-        Label.prototype._createLabel = function _createLabel(params) {
+        Label._createPlacemark = function _createPlacemark(params, LayoutClass) {
             var properties = params.properties,
                 options = params.options;
 
@@ -124,12 +151,12 @@ ymaps.modules.define('Label', ['util.extend', 'stringReplacer'], function (_prov
                 position: 'absolute'
             }, properties);
             options = _utilExtend({}, {
-                iconLayout: this._LayoutClass
+                iconLayout: LayoutClass
             }, options);
             return new ymaps.Placemark([0, 0], properties, options);
         };
 
-        Label.prototype._createLabelWithPresets = function _createLabelWithPresets() {
+        Label.prototype._createLabelContentWithPresets = function _createLabelContentWithPresets() {
             var _options = this._options,
                 labelText = _options.labelText,
                 labelTextClassName = _options.labelTextClassName,
@@ -148,12 +175,18 @@ ymaps.modules.define('Label', ['util.extend', 'stringReplacer'], function (_prov
 
         Label.prototype._labelClick = function _labelClick() {
             this._geoObject.events.fire('labelClick', {
-                targetLabel: this
+                targetLabel: this._label
             });
         };
 
         Label.prototype._removeClickEvent = function _removeClickEvent() {
             this._label.events.remove('click', this._labelClick, this);
+        };
+
+        Label.prototype.destroy = function destroy() {
+            this._removeClickEvent();
+            this.removeFromCollection();
+            this._label = null;
         };
 
         return Label;
@@ -215,7 +248,7 @@ ymaps.modules.define('setPresets', ['util.extend'], function (_provide, _utilExt
 });
 //# sourceMappingURL=setPresets.js.map
 
-ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabelData', 'setZoomVisibility', 'setPresets', 'config', 'createLabelLayout', 'GeoObjectCollection'], function (_provide, Label, setCenter, createDefaultLabelData, setZoomVisibility, setPresets, CONFIG, createLabelLayout, GeoObjectCollection) {
+ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabelData', 'setZoomVisibility', 'setPresets', 'config', 'createLabelLayout', 'getMaxFitTextSize'], function (_provide, Label, setCenter, createDefaultLabelData, setZoomVisibility, setPresets, CONFIG, createLabelLayout, getMaxFitTextSize) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -224,115 +257,109 @@ ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabe
 
     var Polylabel = function () {
         /**
-         * @param {Map} map - карта.
-         * @param {GeoObjectCollection} collections - коллекция коллекций геообъектов.
+         * @param {Map} map
          */
-        function Polylabel(map, collections) {
+        function Polylabel(map, labelsCollection, polygonsCollection) {
             _classCallCheck(this, Polylabel);
 
             this._map = map;
-            this._collections = collections;
-            this._labelsCollections = new GeoObjectCollection();
-            this._map.geoObjects.add(this._labelsCollections);
+            this._polygonsCollection = polygonsCollection;
+            this._labelsCollection = labelsCollection;
             this._labelLayout = createLabelLayout;
             this._initData();
         }
 
         Polylabel.prototype.update = function update() {
-            this._culculateCollections(true);
+            this._calculateCollections(true);
         };
 
         Polylabel.prototype.destroy = function destroy() {
-            this._labelsCollections.removeAll();
+            this._labelsCollection.removeAll();
             this._deleteListeners();
         };
 
         Polylabel.prototype._initData = function _initData() {
             var _this = this;
 
-            setPresets(this._collections);
-            this._culculateCollections(true).then(function () {
+            setPresets(this._labelsCollection);
+            this._calculateCollections(true).then(function () {
                 _this._initMapListeners();
                 _this._initCollectionListeners();
             });
         };
 
-        Polylabel.prototype._culculateCollections = function _culculateCollections(isFirstCals) {
+        Polylabel.prototype._calculateCollections = function _calculateCollections(isFirstCals) {
             var _this2 = this;
 
             return new Promise(function (resolve) {
                 if (isFirstCals) {
                     _this2._clearLabelCollections();
                 }
-                _this2._collections.each(function (collection) {
-                    var labelCollection = void 0;
+                _this2._polygonsCollection.each(function (geoObject) {
                     if (isFirstCals) {
-                        labelCollection = new GeoObjectCollection();
-                        _this2._labelsCollections.add(labelCollection);
+                        _this2._calculateGeoObject(geoObject).then(function () {
+                            _this2._calculateAndSetLabelData(geoObject);
+                        });
+                    } else {
+                        _this2._calculateAndSetLabelData(geoObject);
                     }
-                    collection.each(function (geoObject) {
-                        if (isFirstCals) {
-                            _this2._culculateGeoObject(geoObject, labelCollection).then(function () {
-                                _this2._culculateLabelData(geoObject);
-                            });
-                        } else {
-                            _this2._culculateLabelData(geoObject);
-                        }
-                    });
                 });
                 resolve();
             });
         };
 
-        Polylabel.prototype._culculateLabelData = function _culculateLabelData(geoObject) {
-            var data = geoObject.properties.get('labelData');
-            if (!data) {
+        Polylabel.prototype._calculateAndSetLabelData = function _calculateAndSetLabelData(geoObject) {
+            var labelData = geoObject.properties.get('_labelData');
+            if (!labelData) {
                 return;
             }
-            var labelData = data.data,
-                autoCenter = data.autoCenter,
-                label = data.label;
+            var zoomInfo = labelData.zoomInfo,
+                autoCenter = labelData.autoCenter,
+                label = labelData.label;
 
-            labelData = labelData[this._map.getZoom()];
+            zoomInfo = zoomInfo[this._map.getZoom()];
+
             label = label.getPlacemark();
-
-            if (labelData.visibleForce || labelData.visible) {
-                label.geometry.setCoordinates(labelData.center || autoCenter);
-                label.options.set({
-                    pane: 'places'
-                });
-            } else {
-                label.options.set({
-                    pane: 'phantom'
-                });
-            }
+            label.geometry.setCoordinates(zoomInfo.center || autoCenter);
+            var isVisible = typeof zoomInfo.visibleForce === 'undefined' ? zoomInfo.visible : zoomInfo.visibleForce;
+            label.options.set({
+                pane: isVisible ? 'places' : 'phantom'
+            });
         };
 
-        Polylabel.prototype._culculateGeoObject = function _culculateGeoObject(geoObject, labelCollection) {
+        Polylabel.prototype._calculateGeoObject = function _calculateGeoObject(geoObject) {
             var _this3 = this;
 
             var options = this._getOptions(geoObject);
             var properties = this._getProperties(geoObject);
             var labelData = createDefaultLabelData();
             setCenter(labelData, geoObject, properties);
-            var labelInst = new Label(geoObject, options, this._labelLayout, labelCollection);
+            var labelInst = new Label(geoObject, options, this._labelLayout, this._labelsCollection);
             labelInst.addToCollection();
             return labelInst.getPlacemark().getOverlay().then(function (overlay) {
                 return overlay.getLayout();
             }).then(function (layout) {
                 var size = layout.getElement().firstChild.getBoundingClientRect();
-                labelInst.culculateLabelSize(size);
+                labelInst.calculateLabelSize(size);
                 labelInst._initEvents();
                 setZoomVisibility(_this3._map, labelData, geoObject, size, options.labelForceVisibleZoom);
                 labelData.label = labelInst;
-                geoObject.properties.set('labelData', labelData);
+                geoObject.properties.set('_labelData', labelData);
+            });
+        };
+
+        Polylabel.prototype._recalculateGeoObject = function _recalculateGeoObject(geoObject) {
+            var _this4 = this;
+
+            this._calculateGeoObject(geoObject).then(function () {
+                _this4._calculateAndSetLabelData(geoObject);
             });
         };
 
         Polylabel.prototype._getOptions = function _getOptions(obj) {
             var result = {};
             CONFIG.options.forEach(function (key) {
-                result[key] = obj.options.get(key, undefined);
+                result[key] = obj.options.get(key);
             });
             return result;
         };
@@ -340,48 +367,51 @@ ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabe
         Polylabel.prototype._getProperties = function _getProperties(obj) {
             var result = {};
             CONFIG.properties.forEach(function (key) {
-                result[key] = obj.properties.get(key, undefined);
+                result[key] = obj.properties.get(key);
             });
             return result;
         };
 
         Polylabel.prototype._clearLabelCollections = function _clearLabelCollections() {
-            this._labelsCollections.removeAll();
-            this._labelsCollections.options.set({
+            this._labelsCollection.removeAll();
+            this._labelsCollection.options.set({
                 pane: 'phantom'
             });
         };
 
-        Polylabel.prototype._initMapListeners = function _initMapListeners() {
-            this._map.events.add('boundschange', this._mapBoundsChange, this);
-        };
-
         Polylabel.prototype._initCollectionListeners = function _initCollectionListeners() {
-            this._collections.events.add(['add', 'remove'], this._collectionEvents, this);
+            this._polygonsCollection.events.add(['add', 'remove'], this._onCollectionEvents, this);
         };
 
-        Polylabel.prototype._mapBoundsChange = function _mapBoundsChange(event) {
+        Polylabel.prototype._onMapBoundsChange = function _onMapBoundsChange(event) {
             if (event.get('newZoom') !== event.get('oldZoom')) {
-                this._culculateCollections();
+                this._calculateCollections();
             }
         };
 
-        Polylabel.prototype._collectionEvents = function _collectionEvents(event) {
+        Polylabel.prototype._onCollectionEvents = function _onCollectionEvents(event) {
+            console.log(event);
             switch (event.get('type')) {
                 case 'add':
-                    {}
+                    {
+                        this._recalculateGeoObject(event.get('child'));
+                        break;
+                    }
                 case 'remove':
                     {
-                        //TODO сделать оптимизированное удаление/добавление, чтобы не пересчитывать все
-                        this._culculateCollections(true);
+                        event.get('child').properties.get('_labelData').label.destroy();
                         break;
                     }
             }
         };
 
+        Polylabel.prototype._initMapListeners = function _initMapListeners() {
+            this._map.events.add('boundschange', this._onMapBoundsChange, this);
+        };
+
         Polylabel.prototype._deleteListeners = function _deleteListeners() {
-            this._collections.events.remove(['add', 'remove'], this._collectionEvents, this);
-            this._map.events.remove('boundschange', this._mapBoundsChange, this);
+            this._polygonsCollection.events.remove(['add', 'remove'], this._onCollectionEvents, this);
+            this._map.events.remove('boundschange', this._onMapBoundsChange, this);
         };
 
         return Polylabel;
@@ -391,143 +421,13 @@ ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabe
 });
 //# sourceMappingURL=util.polylabel.js.map
 
-ymaps.modules.define('calculateArea', [], function (_provide) {
-    _provide(calculateArea);
-
-    // Equatorial radius of Earth
-    var RADIUS = 6378137;
-
-    function calculateArea(feature) {
-        var geoJsonGeometry = getGeoJsonGeometry(feature);
-        return calculateJsonGeometryArea(geoJsonGeometry);
-    }
-
-    function getGeoJsonGeometry(feature) {
-        if (feature.type === 'Feature') {
-            return feature.geometry;
-        } else if (feature.geometry && feature.geometry.getType) {
-            if (feature.geometry.getType() === 'Circle') {
-                return {
-                    type: 'Circle',
-                    coordinates: feature.geometry.getCoordinates(),
-                    radius: feature.geometry.getRadius()
-                };
-            }
-            return {
-                type: feature.geometry.getType(),
-                coordinates: feature.geometry.getCoordinates()
-            };
-        } else {
-            throw new Error('util.calculateArea: Unknown input object.');
-        }
-    }
-
-    function calculateJsonGeometryArea(geometry) {
-        var area = 0;
-        var i;
-        switch (geometry.type) {
-            case 'Polygon':
-                return polygonArea(geometry.coordinates);
-            case 'MultiPolygon':
-                for (i = 0; i < geometry.coordinates.length; i++) {
-                    area += polygonArea(geometry.coordinates[i]);
-                }
-                return area;
-            case 'Rectangle':
-                return polygonArea([[geometry.coordinates[0], [geometry.coordinates[0][0], geometry.coordinates[1][1]], geometry.coordinates[1], [geometry.coordinates[1][0], geometry.coordinates[0][1]], geometry.coordinates[0]]]);
-            case 'Circle':
-                return Math.PI * Math.pow(geometry.radius, 2);
-            case 'Point':
-            case 'MultiPoint':
-            case 'LineString':
-            case 'MultiLineString':
-                return 0;
-        }
-    }
-
-    function polygonArea(coords) {
-        var area = 0;
-        if (coords && coords.length > 0) {
-            area += Math.abs(ringArea(coords[0]));
-            for (var i = 1; i < coords.length; i++) {
-                area -= Math.abs(ringArea(coords[i]));
-            }
-        }
-        return area;
-    }
-
-    /**
-     * Modified version of https://github.com/mapbox/geojson-area
-     * Calculate the approximate area of the polygon were it projected onto
-     *     the earth.  Note that this area will be positive if ring is oriented
-     *     clockwise, otherwise it will be negative.
-     *
-     * Reference:
-     * Robert. G. Chamberlain and William H. Duquette, "Some Algorithms for
-     *     Polygons on a Sphere", JPL Publication 07-03, Jet Propulsion
-     *     Laboratory, Pasadena, CA, June 2007 https://trs.jpl.nasa.gov/handle/2014/40409
-     *
-     * Returns:
-     * {Number} The approximate signed geodesic area of the polygon in square
-     *     meters.
-     */
-
-    function ringArea(coords) {
-        var p1;
-        var p2;
-        var p3;
-        var lowerIndex;
-        var middleIndex;
-        var upperIndex;
-        var i;
-        var area = 0;
-        var coordsLength = coords.length;
-        var longitude = ymaps.meta.coordinatesOrder === 'latlong' ? 1 : 0;
-        var latitude = ymaps.meta.coordinatesOrder === 'latlong' ? 0 : 1;
-
-        if (coordsLength > 2) {
-            for (i = 0; i < coordsLength; i++) {
-                // i = N-2
-                if (i === coordsLength - 2) {
-                    lowerIndex = coordsLength - 2;
-                    middleIndex = coordsLength - 1;
-                    upperIndex = 0;
-                } else if (i === coordsLength - 1) {
-                    // i = N-1
-                    lowerIndex = coordsLength - 1;
-                    middleIndex = 0;
-                    upperIndex = 1;
-                } else {
-                    // i = 0 to N-3
-                    lowerIndex = i;
-                    middleIndex = i + 1;
-                    upperIndex = i + 2;
-                }
-                p1 = coords[lowerIndex];
-                p2 = coords[middleIndex];
-                p3 = coords[upperIndex];
-                area += (rad(p3[longitude]) - rad(p1[longitude])) * Math.sin(rad(p2[latitude]));
-            }
-
-            area = area * RADIUS * RADIUS / 2;
-        }
-
-        return area;
-    }
-
-    function rad(_) {
-        return _ * Math.PI / 180;
-    }
-});
-//# sourceMappingURL=calculateArea.js.map
-
 ymaps.modules.define('checkPointPosition', [], function (_provide) {
     _provide(isInside);
 
     /**
-         * Проверятет находится ли точка внутри геометрии
-         * @param {Array[2]} point - Координаты точки.
-         * @param {Array} coords - Координаты фигуры.
+         * Check if the point is inside geometry.
+         * @param {Array[2]} point - Point coordinates.
+         * @param {Array} coords - Geometry coordinates.
          */
     function isInside(point, coords) {
         var parity = 0;
@@ -544,10 +444,10 @@ ymaps.modules.define('checkPointPosition', [], function (_provide) {
     }
 
     /**
-     * Определяет положение точки относительно ребра
-     * @param {Array[2]} p - Исследуемая точка.
-     * @param {Array[2]} p0 - Точка ребра.
-     * @param {Array[2]} p1 - Точка ребра.
+     * Determines the position of the point relative to the edge.
+     * @param {Array[2]} p - Main point.
+     * @param {Array[2]} p0 - First edge point.
+     * @param {Array[2]} p1 - Second edge point.
      */
     function pointClassify(p, p0, p1) {
         var a = pointMinus(p1, p0);
@@ -587,9 +487,9 @@ ymaps.modules.define('checkPointPosition', [], function (_provide) {
     }
 
     /**
-     * Определяет как луч из точки взаимодействет с ребром (Пересекается, Касается, Нейтрально)
-     * @param {Arrya[2]} point - Исследуемая точка.
-     * @param {Array} edge - Ребро.
+     * Determines how a ray from a point interacts with an edge (Crosses, Affects, Neutral).
+     * @param {Arrya[2]} point - Main point.
+     * @param {Array} edge - Edge.
      */
     function edgeType(point, edge) {
         var v = edge[0];
@@ -623,16 +523,16 @@ ymaps.modules.define('createDefaultLabelData', ['config'], function (_provide, C
     _provide(function () {
         var i = MIN_ZOOM;
         var result = {
-            data: {},
+            zoomInfo: {}, // Object with info for every zoom
             autoCenter: [0, 0],
             polygonIndex: 0
         };
         while (i <= MAX_ZOOM) {
-            result.data[i] = {
+            result.zoomInfo[i] = {
                 visible: false,
-                visibleForce: false,
-                center: null,
-                maxFitTextSize: null
+                visibleForce: undefined,
+                center: undefined,
+                maxFitTextSize: undefined
             };
             i++;
         }
@@ -642,11 +542,13 @@ ymaps.modules.define('createDefaultLabelData', ['config'], function (_provide, C
 //# sourceMappingURL=createDefaultLabelData.js.map
 
 ymaps.modules.define("getMaxFitTextSize", [], function (_provide) {
-  _provide(function () {});
+    _provide(function (geoObject) {
+        console.log(geoObject);
+    });
 });
 //# sourceMappingURL=getMaxFitTextSize.js.map
 
-ymaps.modules.define('getPolesOfInaccessibility', ['calculateArea'], function (_provide, calculateArea) {
+ymaps.modules.define('getPolesOfInaccessibility', ['util.calculateArea'], function (_provide, calculateArea) {
     _provide(getPolylabelCenter);
 
     function TinyQueue(data, compare) {
@@ -888,12 +790,15 @@ ymaps.modules.define('getPolesOfInaccessibility', ['calculateArea'], function (_
     }
 
     /**
-     * Возвращает оптимальный центр из полигона и индекс полигона
-     * @param {Array} polygonCoords - координаты полигона
+     * Returns the optimal center from the polygon and the index of the largest.
+     * @param {Array} polygonCoords - Polygon geometry.
      * @param {number} precision
      * @param {boolean} debug
      */
     function getPolylabelCenter(polygonCoords, precision, debug) {
+        if (typeof calculateArea === 'undefined') {
+            throw new Error('Didn\'t find calculateArea module');
+        }
         var maxArea = Number.MIN_VALUE;
         var indexOfMaxArea = 0;
         var data = void 0;
@@ -933,69 +838,52 @@ ymaps.modules.define('stringReplacer', [], function (_provide) {
 });
 //# sourceMappingURL=stringReplacer.js.map
 
-ymaps.modules.define('parseZoomData', ['util.array', 'config'], function (_provide, _utilArray, CONFIG) {
+ymaps.modules.define('parseZoomData', ['util.objectKeys', 'config'], function (_provide, _utilObjectKeys, CONFIG) {
     var MIN_ZOOM = CONFIG.MIN_ZOOM,
         MAX_ZOOM = CONFIG.MAX_ZOOM;
 
-    _provide(parseZoomData);
 
-    var isOnlyVisible = false;
-    var onlyVisibleZooms = [];
-
-    function parseZoomData(zoomData, pIsOnlyVisible) {
-        isOnlyVisible = pIsOnlyVisible;
-        onlyVisibleZooms = [];
-
-        var zoom = createDefZoomObj();
-        if (typeof zoomData === 'number') {
-            parseNumber(zoom, zoomData);
-        } else if (_utilArray.isArray(zoomData)) {
-            parseArray(zoom, zoomData);
-        } else if (typeof zoomData === 'string') {
-            if (parseString(zoom, zoomData) === 'err') {
-                return zoom;
-            }
-        }
-        return isOnlyVisible ? onlyVisibleZooms : zoom;
-    }
-
-    function parseNumber(target, zoom) {
-        target[zoom] = true;
-        checkOnOnlyVisible(zoom);
-    }
-
-    function parseArray(target, zoom) {
-        zoom.forEach(function (z) {
-            if (typeof z === 'number') {
-                parseNumber(target, z);
-            } else if (typeof z === 'string') {
-                parseString(target, z);
+    /**
+     * Parse data about zoom.
+     * @param {Object} zoomData
+     * Supported object properties view: number, string
+     * @return {Object} - Returned object with zoom, where the parsed values.
+     * @example
+     * zoomData = {1: 'value1', '3_5': 'value2'}
+     * return {1: 'value1', 2: undefined ... 3: 'value2', 4: 'value2', 5: 'value2', 6: undefined ...}
+    */
+    function parseZoomData(zoomData) {
+        var result = createDefZoomObj();
+        _utilObjectKeys(zoomData).forEach(function (key) {
+            if (typeof key === 'string') {
+                parseString(result, key, zoomData[key]);
+            } else if (typeof key === 'number') {
+                parseNumber(result, key, zoomData[key]);
             }
         });
+        return result;
     }
 
-    function parseString(target, zoom) {
+    _provide(parseZoomData)
+
+    function parseNumber(target, zoom, value) {
+        target[zoom] = value;
+    }
+
+    function parseString(target, zoom, value) {
         if (!isNaN(Number(zoom))) {
-            target[Number(zoom)] = true;
-            checkOnOnlyVisible(Number(zoom));
+            target[Number(zoom)] = value;
             return;
         }
         var zoomRange = zoom.split('_').map(Number);
         if (isNaN(zoomRange[0]) || isNaN(zoomRange[1])) {
-            return 'err';
+            return;
         }
         var bottom = zoomRange[0] < MIN_ZOOM ? MIN_ZOOM : zoomRange[0];
         var top = zoomRange[1] > MAX_ZOOM ? MAX_ZOOM : zoomRange[1];
         while (bottom <= top) {
-            target[bottom] = true;
-            checkOnOnlyVisible(bottom);
+            target[bottom] = value;
             bottom++;
-        }
-    }
-
-    function checkOnOnlyVisible(zoom) {
-        if (isOnlyVisible) {
-            onlyVisibleZooms.push(zoom);
         }
     }
 
@@ -1003,7 +891,7 @@ ymaps.modules.define('parseZoomData', ['util.array', 'config'], function (_provi
         var i = MIN_ZOOM;
         var result = {};
         while (i <= MAX_ZOOM) {
-            result[i] = false;
+            result[i] = undefined;
             i++;
         }
         return result;
@@ -1012,22 +900,48 @@ ymaps.modules.define('parseZoomData', ['util.array', 'config'], function (_provi
 //# sourceMappingURL=parseZoomData.js.map
 
 ymaps.modules.define('setZoomVisibility', ['util.objectKeys', 'checkPointPosition', 'config', 'parseZoomData'], function (_provide, _utilObjectKeys, isInside, CONFIG, parseZoomData) {
-    _provide(setZoomVisibility);
 
+    /**
+     * Set zoom visibility for each zoom;
+     * @param {Map} map
+     * @param {Object} target - Target object containing each zoom in properties.
+     * @param {GeoObject} geoObject
+     * @param {Object} labelSize
+     * @param {Nubmer} labelSize.width
+     * @param {Nubmer} labelSize.height
+     * @param {Boolean | Object} labelForceVisibleZoom - Zoom visibility data.
+     * May be one rule(boolean) or for certains zooms(Object).
+    */
     function setZoomVisibility(map, target, geoObject, labelSize, labelForceVisibleZoom) {
-        var forceZoomData = parseZoomData(labelForceVisibleZoom);
+        setForceVisibleZoom(target, labelForceVisibleZoom);
         var coords = geoObject.geometry.getCoordinates()[target.polygonIndex];
         var autoZoom = getFirstZoomInside(map, target.autoCenter, coords, labelSize);
 
-        _utilObjectKeys(target.data).forEach(function (z) {
-            if (!target.data[z].center) {
-                target.data[z].visible = z >= autoZoom;
+        _utilObjectKeys(target.zoomInfo).forEach(function (z) {
+            if (!target.zoomInfo[z].center) {
+                target.zoomInfo[z].visible = z >= autoZoom;
             } else {
-                var zoom = getFirstZoomInside(map, target.data[z].center, coords, labelSize);
-                target.data[z].visible = z >= zoom;
+                var zoom = getFirstZoomInside(map, target.zoomInfo[z].center, coords, labelSize);
+                target.zoomInfo[z].visible = z >= zoom;
             }
-            target.data[z].visibleForce = forceZoomData[z];
         });
+    }
+
+    _provide(setZoomVisibility)
+
+    function setForceVisibleZoom(target, labelForceVisibleZoom) {
+        if (typeof labelForceVisibleZoom === 'boolean') {
+            _utilObjectKeys(target.zoomInfo).forEach(function (z) {
+                target.zoomInfo[z].visibleForce = labelForceVisibleZoom;
+            });
+        } else if (Object.prototype.toString.call(labelForceVisibleZoom) === '[object Object]') {
+            var data = parseZoomData(labelForceVisibleZoom);
+            _utilObjectKeys(data).forEach(function (z) {
+                if (typeof data[z] !== 'undefined') {
+                    target.zoomInfo[z].visibleForce = data[z];
+                }
+            });
+        }
     }
 
     function getFirstZoomInside(map, center, coords, size) {

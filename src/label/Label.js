@@ -1,5 +1,14 @@
 import stringReplacer from 'stringReplacer';
+
+/** Class representing a label */
 export default class Label {
+    /**
+     * Create a Label
+     * @param {GeoObject} geoObject
+     * @param {Object} options
+     * @param {templateLayoutFactory} LayoutClass
+     * @param {GeoObjectCollection} parentCollection
+     */
     constructor(geoObject, options, LayoutClass, parentCollection) {
         if (!geoObject || !LayoutClass || !parentCollection) {
             throw new Error('wrong argument');
@@ -12,15 +21,22 @@ export default class Label {
         this._initLabel();
     }
 
+    /**
+     * @return {Placemark} The instance of Placemark.
+     */
     getPlacemark() {
         return this._label;
     }
 
-    culculateLabelSize(size) {
+    /**
+     * Create Placemark with size.
+     * @param {Object} size
+     */
+    calculateLabelSize(size) {
         this.removeFromCollection();
         const h = size.height / 2;
         const w = size.width / 2;
-        this._label = this._createLabel({
+        this._label = Label._createPlacemark({
             properties: Object.assign({}, this._label.properties.getAll(), {
                 top: -h,
                 left: -w
@@ -31,17 +47,22 @@ export default class Label {
                     coordinates: [[-w, -h], [w, h]]
                 }
             })
-        });
+        }, this._LayoutClass);
         this.addToCollection();
     }
 
+    /**
+     * Remove placemark from collection
+     */
     removeFromCollection() {
         if (!this._parentCollection) {
             return false;
         }
         this._parentCollection.remove(this._label);
     }
-
+    /**
+     * Add placemark to collection
+     */
     addToCollection() {
         if (!this._parentCollection) {
             return false;
@@ -49,31 +70,39 @@ export default class Label {
         this._parentCollection.add(this._label);
     }
 
+    /**
+     * Create & init placemark by template
+     */
     _initLabel() {
-        const { labelHtml } = this._options;
+        const {labelHtml} = this._options;
         let result;
         if (labelHtml) {
             result = labelHtml;
         } else {
-            result = this._createLabelWithPresets();
+            result = this._createLabelContentWithPresets();
         }
-        this._label = this._createLabel({
+        this._label = Label._createPlacemark({
             properties: {
                 html: result
             },
             options: this._options
-        });
+        }, this._LayoutClass);
     }
 
-    _createLabel(params) {
-        let { properties, options } = params;
+    /**
+     * Create Placemark.
+     * @param {Object} params
+     * @return {Placemark}
+     */
+    static _createPlacemark(params, LayoutClass) {
+        let {properties, options} = params;
         properties = Object.assign({}, {
             top: 0,
             left: 0,
             position: 'absolute'
         }, properties);
         options = Object.assign({}, {
-            iconLayout: this._LayoutClass
+            iconLayout: LayoutClass
         }, options);
         return new ymaps.Placemark(
             [0, 0],
@@ -81,7 +110,11 @@ export default class Label {
             options);
     }
 
-    _createLabelWithPresets() {
+    /**
+     * Create label content for Placemark.
+     * return {String} content.
+     */
+    _createLabelContentWithPresets() {
         const {
             labelText, labelTextClassName, labelTextSize, outlineColor, textColor
         } = this._options;
@@ -100,11 +133,17 @@ export default class Label {
 
     _labelClick() {
         this._geoObject.events.fire('labelClick', {
-            targetLabel: this
+            targetLabel: this._label
         });
     }
 
     _removeClickEvent() {
         this._label.events.remove('click', this._labelClick, this);
+    }
+
+    destroy() {
+        this._removeClickEvent();
+        this.removeFromCollection();
+        this._label = null;
     }
 }

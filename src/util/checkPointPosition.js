@@ -1,8 +1,8 @@
 export default isInside;
 /**
-     * Проверятет находится ли точка внутри геометрии
-     * @param {Array[2]} point - Координаты точки.
-     * @param {Array} coords - Координаты фигуры.
+     * Check if the point is inside geometry.
+     * @param {Array[2]} point - Point coordinates.
+     * @param {Array} coords - Geometry coordinates.
      */
 function isInside(point, coords) {
     let parity = 0;
@@ -19,10 +19,10 @@ function isInside(point, coords) {
 }
 
 /**
- * Определяет положение точки относительно ребра
- * @param {Array[2]} p - Исследуемая точка.
- * @param {Array[2]} p0 - Точка ребра.
- * @param {Array[2]} p1 - Точка ребра.
+ * Determines the position of the point relative to the edge.
+ * @param {Array[2]} p - Main point.
+ * @param {Array[2]} p0 - First edge point.
+ * @param {Array[2]} p1 - Second edge point.
  */
 function pointClassify(p, p0, p1) {
     const a = pointMinus(p1, p0);
@@ -62,9 +62,9 @@ function pointEquals(p1, p2) {
 }
 
 /**
- * Определяет как луч из точки взаимодействет с ребром (Пересекается, Касается, Нейтрально)
- * @param {Arrya[2]} point - Исследуемая точка.
- * @param {Array} edge - Ребро.
+ * Determines how a ray from a point interacts with an edge (Crosses, Affects, Neutral).
+ * @param {Arrya[2]} point - Main point.
+ * @param {Array} edge - Edge.
  */
 function edgeType(point, edge) {
     const v = edge[0];

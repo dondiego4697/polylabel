@@ -1,4 +1,4 @@
-import calculateArea from 'calculateArea';
+import calculateArea from 'util.calculateArea';
 export default getPolylabelCenter;
 
 function TinyQueue(data, compare) {
@@ -239,12 +239,15 @@ function getSegDistSq(px, py, a, b) {
 }
 
 /**
- * Возвращает оптимальный центр из полигона и индекс полигона
- * @param {Array} polygonCoords - координаты полигона
+ * Returns the optimal center from the polygon and the index of the largest.
+ * @param {Array} polygonCoords - Polygon geometry.
  * @param {number} precision
  * @param {boolean} debug
  */
 function getPolylabelCenter(polygonCoords, precision, debug) {
+    if (typeof calculateArea === 'undefined') {
+        throw new Error('Didn\'t find calculateArea module');
+    }
     let maxArea = Number.MIN_VALUE;
     let indexOfMaxArea = 0;
     let data;

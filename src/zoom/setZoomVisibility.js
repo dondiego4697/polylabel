@@ -2,22 +2,45 @@ import isInside from 'checkPointPosition';
 import CONFIG from 'config';
 import parseZoomData from 'parseZoomData';
 
-export default setZoomVisibility;
-
-function setZoomVisibility(map, target, geoObject, labelSize, labelForceVisibleZoom) {
-    const forceZoomData = parseZoomData(labelForceVisibleZoom);
+/**
+ * Set zoom visibility for each zoom;
+ * @param {Map} map
+ * @param {Object} target - Target object containing each zoom in properties.
+ * @param {GeoObject} geoObject
+ * @param {Object} labelSize
+ * @param {Nubmer} labelSize.width
+ * @param {Nubmer} labelSize.height
+ * @param {Boolean | Object} labelForceVisibleZoom - Zoom visibility data.
+ * May be one rule(boolean) or for certains zooms(Object).
+*/
+export default function setZoomVisibility(map, target, geoObject, labelSize, labelForceVisibleZoom) {
+    setForceVisibleZoom(target, labelForceVisibleZoom);
     const coords = geoObject.geometry.getCoordinates()[target.polygonIndex];
     const autoZoom = getFirstZoomInside(map, target.autoCenter, coords, labelSize);
 
-    Object.keys(target.data).forEach((z) => {
-        if (!target.data[z].center) {
-            target.data[z].visible = z >= autoZoom;
+    Object.keys(target.zoomInfo).forEach((z) => {
+        if (!target.zoomInfo[z].center) {
+            target.zoomInfo[z].visible = z >= autoZoom;
         } else {
-            const zoom = getFirstZoomInside(map, target.data[z].center, coords, labelSize);
-            target.data[z].visible = z >= zoom;
+            const zoom = getFirstZoomInside(map, target.zoomInfo[z].center, coords, labelSize);
+            target.zoomInfo[z].visible = z >= zoom;
         }
-        target.data[z].visibleForce = forceZoomData[z];
     });
+}
+
+function setForceVisibleZoom(target, labelForceVisibleZoom) {
+    if (typeof labelForceVisibleZoom === 'boolean') {
+        Object.keys(target.zoomInfo).forEach((z) => {
+            target.zoomInfo[z].visibleForce = labelForceVisibleZoom;
+        });
+    } else if (Object.prototype.toString.call(labelForceVisibleZoom) === '[object Object]') {
+        const data = parseZoomData(labelForceVisibleZoom);
+        Object.keys(data).forEach(z => {
+            if (typeof data[z] !== 'undefined') {
+                target.zoomInfo[z].visibleForce = data[z];
+            }
+        });
+    }
 }
 
 function getFirstZoomInside(map, center, coords, size) {
