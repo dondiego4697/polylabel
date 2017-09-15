@@ -248,7 +248,7 @@ ymaps.modules.define('setPresets', ['util.extend'], function (_provide, _utilExt
 });
 //# sourceMappingURL=setPresets.js.map
 
-ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabelData', 'setZoomVisibility', 'setPresets', 'config', 'createLabelLayout', 'getMaxFitTextSize'], function (_provide, Label, setCenter, createDefaultLabelData, setZoomVisibility, setPresets, CONFIG, createLabelLayout, getMaxFitTextSize) {
+ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabelData', 'setZoomVisibility', 'setPresets', 'config', 'createLabelLayout'], function (_provide, Label, setCenter, createDefaultLabelData, setZoomVisibility, setPresets, CONFIG, createLabelLayout) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -291,44 +291,48 @@ ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabe
         Polylabel.prototype._calculateCollections = function _calculateCollections(isFirstCals) {
             var _this2 = this;
 
-            return new Promise(function (resolve) {
+            var promises = [];
+            if (isFirstCals) {
+                this._clearLabelCollections();
+            }
+            this._polygonsCollection.each(function (geoObject) {
                 if (isFirstCals) {
-                    _this2._clearLabelCollections();
+                    _this2._calculateGeoObjectLabelData(geoObject).then(function () {
+                        promises.push(_this2._calculateAndSetLabelData(geoObject));
+                    });
+                } else {
+                    promises.push(_this2._calculateAndSetLabelData(geoObject));
                 }
-                _this2._polygonsCollection.each(function (geoObject) {
-                    if (isFirstCals) {
-                        _this2._calculateGeoObject(geoObject).then(function () {
-                            _this2._calculateAndSetLabelData(geoObject);
-                        });
-                    } else {
-                        _this2._calculateAndSetLabelData(geoObject);
-                    }
+            });
+            return Promise.all(promises);
+        };
+
+        Polylabel.prototype._calculateAndSetLabelData = function _calculateAndSetLabelData(geoObject) {
+            var _this3 = this;
+
+            return new Promise(function (resolve) {
+                var labelData = geoObject.properties.get('_labelData');
+                if (!labelData) {
+                    resolve();
+                }
+                var zoomInfo = labelData.zoomInfo,
+                    autoCenter = labelData.autoCenter,
+                    label = labelData.label;
+
+                zoomInfo = zoomInfo[_this3._map.getZoom()];
+
+                label = label.getPlacemark();
+                label.geometry.setCoordinates(zoomInfo.center || autoCenter);
+                var isVisible = typeof zoomInfo.visibleForce === 'undefined' ? zoomInfo.visible : zoomInfo.visibleForce;
+                label.options.set({
+                    pane: isVisible ? 'places' : 'phantom'
                 });
                 resolve();
             });
         };
 
-        Polylabel.prototype._calculateAndSetLabelData = function _calculateAndSetLabelData(geoObject) {
-            var labelData = geoObject.properties.get('_labelData');
-            if (!labelData) {
-                return;
-            }
-            var zoomInfo = labelData.zoomInfo,
-                autoCenter = labelData.autoCenter,
-                label = labelData.label;
-
-            zoomInfo = zoomInfo[this._map.getZoom()];
-
-            label = label.getPlacemark();
-            label.geometry.setCoordinates(zoomInfo.center || autoCenter);
-            var isVisible = typeof zoomInfo.visibleForce === 'undefined' ? zoomInfo.visible : zoomInfo.visibleForce;
-            label.options.set({
-                pane: isVisible ? 'places' : 'phantom'
-            });
-        };
-
-        Polylabel.prototype._calculateGeoObject = function _calculateGeoObject(geoObject) {
-            var _this3 = this;
+        Polylabel.prototype._calculateGeoObjectLabelData = function _calculateGeoObjectLabelData(geoObject) {
+            var _this4 = this;
 
             var options = this._getOptions(geoObject);
             var properties = this._getProperties(geoObject);
@@ -342,34 +346,32 @@ ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabe
                 var size = layout.getElement().firstChild.getBoundingClientRect();
                 labelInst.calculateLabelSize(size);
                 labelInst._initEvents();
-                setZoomVisibility(_this3._map, labelData, geoObject, size, options.labelForceVisibleZoom);
+                setZoomVisibility(_this4._map, labelData, geoObject, size, options.labelForceVisibleZoom);
                 labelData.label = labelInst;
                 geoObject.properties.set('_labelData', labelData);
             });
         };
 
         Polylabel.prototype._recalculateGeoObject = function _recalculateGeoObject(geoObject) {
-            var _this4 = this;
+            var _this5 = this;
 
-            this._calculateGeoObject(geoObject).then(function () {
-                _this4._calculateAndSetLabelData(geoObject);
+            this._calculateGeoObjectLabelData(geoObject).then(function () {
+                _this5._calculateAndSetLabelData(geoObject);
             });
         };
 
         Polylabel.prototype._getOptions = function _getOptions(obj) {
-            var result = {};
-            CONFIG.options.forEach(function (key) {
+            return CONFIG.options.reduce(function (result, key) {
                 result[key] = obj.options.get(key);
-            });
-            return result;
+                return result;
+            }, {});
         };
 
         Polylabel.prototype._getProperties = function _getProperties(obj) {
-            var result = {};
-            CONFIG.properties.forEach(function (key) {
+            return CONFIG.properties.reduce(function (result, key) {
                 result[key] = obj.properties.get(key);
-            });
-            return result;
+                return result;
+            }, {});
         };
 
         Polylabel.prototype._clearLabelCollections = function _clearLabelCollections() {
@@ -380,7 +382,7 @@ ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabe
         };
 
         Polylabel.prototype._initCollectionListeners = function _initCollectionListeners() {
-            this._polygonsCollection.events.add(['add', 'remove'], this._onCollectionEvents, this);
+            this._polygonsCollection.events.add(['add', 'remove'], this._collectionEventHandler, this);
         };
 
         Polylabel.prototype._onMapBoundsChange = function _onMapBoundsChange(event) {
@@ -389,8 +391,7 @@ ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabe
             }
         };
 
-        Polylabel.prototype._onCollectionEvents = function _onCollectionEvents(event) {
-            console.log(event);
+        Polylabel.prototype._collectionEventHandler = function _collectionEventHandler(event) {
             switch (event.get('type')) {
                 case 'add':
                     {
@@ -410,7 +411,7 @@ ymaps.modules.define('util.polylabel', ['Label', 'setCenter', 'createDefaultLabe
         };
 
         Polylabel.prototype._deleteListeners = function _deleteListeners() {
-            this._polygonsCollection.events.remove(['add', 'remove'], this._onCollectionEvents, this);
+            this._polygonsCollection.events.remove(['add', 'remove'], this._collectionEventHandler, this);
             this._map.events.remove('boundschange', this._onMapBoundsChange, this);
         };
 
@@ -525,14 +526,14 @@ ymaps.modules.define('createDefaultLabelData', ['config'], function (_provide, C
         var result = {
             zoomInfo: {}, // Object with info for every zoom
             autoCenter: [0, 0],
-            polygonIndex: 0
+            polygonIndex: 0,
+            maxFitTextSize: false
         };
         while (i <= MAX_ZOOM) {
             result.zoomInfo[i] = {
                 visible: false,
                 visibleForce: undefined,
-                center: undefined,
-                maxFitTextSize: undefined
+                center: undefined
             };
             i++;
         }
@@ -543,7 +544,7 @@ ymaps.modules.define('createDefaultLabelData', ['config'], function (_provide, C
 
 ymaps.modules.define("getMaxFitTextSize", [], function (_provide) {
     _provide(function (geoObject) {
-        console.log(geoObject);
+        console.log(geoObject.geometry.getCoordinates()[5]);
     });
 });
 //# sourceMappingURL=getMaxFitTextSize.js.map
@@ -827,6 +828,17 @@ ymaps.modules.define('getPolesOfInaccessibility', ['util.calculateArea'], functi
 });
 //# sourceMappingURL=getPolesOfInaccessibility.js.map
 
+ymaps.modules.define("setMaxFitTextSize", [], function (_provide) {
+    _provide(function (labelData, geoObject, size, options) {
+        var maxFitTextSize = options.maxFitTextSize;
+
+        if (!maxFitTextSize) {
+            return;
+        }
+    });
+});
+//# sourceMappingURL=setMaxFitTextSize.js.map
+
 ymaps.modules.define('stringReplacer', [], function (_provide) {
     _provide(function (template, argsArr) {
         var result = template;
@@ -853,15 +865,14 @@ ymaps.modules.define('parseZoomData', ['util.objectKeys', 'config'], function (_
      * return {1: 'value1', 2: undefined ... 3: 'value2', 4: 'value2', 5: 'value2', 6: undefined ...}
     */
     function parseZoomData(zoomData) {
-        var result = createDefZoomObj();
-        _utilObjectKeys(zoomData).forEach(function (key) {
+        return _utilObjectKeys(zoomData).reduce(function (result, key) {
             if (typeof key === 'string') {
                 parseString(result, key, zoomData[key]);
             } else if (typeof key === 'number') {
                 parseNumber(result, key, zoomData[key]);
             }
-        });
-        return result;
+            return result;
+        }, createDefZoomObj());
     }
 
     _provide(parseZoomData)

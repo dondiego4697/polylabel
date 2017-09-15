@@ -76,13 +76,14 @@
                 let i = 0;
                 mainObjectCollection.each(function (geoObject) {
                     if ([0, 1, 2, 3, 6].includes(i)) {
+                        //geoObject.options.set('maxFitTextSize', true); // ставится на все зумы, тк чтобы менять размер placemark, его надо при переключении зума менять, перерасчитывать
                         //geoObject.options.set({ labelHtml: '<div style="margin: 0"><img src="../for-dev/morty.jpg" width=40px height=40px style="border-radius: 3px;"></div>' });
                         /* geoObject.events.add('labelClick', function (event) {
                             console.log(event);
                         }); */
                         //geoObject.options.set('preset', 'polylabel#SmallBlackInWhiteOutline');
                         //geoObject.options.set({ labelForceVisibleZoom: true });
-                        //geoObject.options.set({ labelForceVisibleZoom: {0: true, '2_3': false} });
+                        //geoObject.options.set({ labelForceVisibleZoom: { 0: true, '2_3': false } });
                     } else if ([8, 160, 170, 180, 190].includes(i)) {
                         //geoObject.options.set('preset', 'polylabel#small|whiteInBlackOutline');
                         //geoObject.options.set('preset', 'polylabel#small');

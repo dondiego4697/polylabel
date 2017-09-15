@@ -11,15 +11,14 @@ const {MIN_ZOOM, MAX_ZOOM} = CONFIG;
  * return {1: 'value1', 2: undefined ... 3: 'value2', 4: 'value2', 5: 'value2', 6: undefined ...}
 */
 export default function parseZoomData(zoomData) {
-    let result = createDefZoomObj();
-    Object.keys(zoomData).forEach(key => {
+    return Object.keys(zoomData).reduce((result, key) => {
         if (typeof key === 'string') {
             parseString(result, key, zoomData[key]);
         } else if (typeof key === 'number') {
             parseNumber(result, key, zoomData[key]);
         }
-    });
-    return result;
+        return result;
+    }, createDefZoomObj());
 }
 
 function parseNumber(target, zoom, value) {

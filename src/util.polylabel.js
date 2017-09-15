@@ -5,7 +5,6 @@ import setZoomVisibility from 'setZoomVisibility';
 import setPresets from 'setPresets';
 import CONFIG from 'config';
 import createLabelLayout from 'createLabelLayout';
-import getMaxFitTextSize from 'getMaxFitTextSize';
 
 class Polylabel {
     /**
@@ -37,80 +36,86 @@ class Polylabel {
     }
 
     _calculateCollections(isFirstCals) {
-        return new Promise(resolve => {
+        let promises = [];
+        if (isFirstCals) {
+            this._clearLabelCollections();
+        }
+        this._polygonsCollection.each((geoObject) => {
             if (isFirstCals) {
-                this._clearLabelCollections();
+                this._calculateGeoObjectLabelData(geoObject).then(() => {
+                    promises.push(this._calculateAndSetLabelData(geoObject));
+                });
+            } else {
+                promises.push(this._calculateAndSetLabelData(geoObject));
             }
-            this._polygonsCollection.each((geoObject) => {
-                if (isFirstCals) {
-                    this._calculateGeoObject(geoObject).then(() => {
-                        this._calculateAndSetLabelData(geoObject);
-                    });
-                } else {
-                    this._calculateAndSetLabelData(geoObject);
-                }
+        });
+        return Promise.all(promises);
+    }
+
+    _calculateAndSetLabelData(geoObject) {
+        return new Promise(resolve => {
+            let labelData = geoObject.properties.get('_labelData');
+            if (!labelData) {
+                resolve();
+            }
+            let {
+                zoomInfo,
+                autoCenter,
+                label
+            } = labelData;
+            zoomInfo = zoomInfo[this._map.getZoom()];
+
+            label = label.getPlacemark();
+            label.geometry.setCoordinates(zoomInfo.center || autoCenter);
+            const isVisible = typeof zoomInfo.visibleForce === 'undefined' ? zoomInfo.visible : zoomInfo.visibleForce;
+            label.options.set({
+                pane: isVisible ? 'places' : 'phantom'
             });
             resolve();
         });
     }
 
-    _calculateAndSetLabelData(geoObject) {
-        let labelData = geoObject.properties.get('_labelData');
-        if (!labelData) {
-            return;
-        }
-        let {
-            zoomInfo,
-            autoCenter,
-            label
-        } = labelData;
-        zoomInfo = zoomInfo[this._map.getZoom()];
-
-        label = label.getPlacemark();
-        label.geometry.setCoordinates(zoomInfo.center || autoCenter);
-        const isVisible = typeof zoomInfo.visibleForce === 'undefined' ? zoomInfo.visible : zoomInfo.visibleForce;
-        label.options.set({
-            pane: isVisible ? 'places' : 'phantom'
-        });
-    }
-
-    _calculateGeoObject(geoObject) {
+    /**
+     * Calculate GeoObject properties and options for label.
+     * Add property _labelData in geoObject
+     */
+    _calculateGeoObjectLabelData(geoObject) {
         const options = this._getOptions(geoObject);
         const properties = this._getProperties(geoObject);
         let labelData = createDefaultLabelData();
         setCenter(labelData, geoObject, properties);
         const labelInst = new Label(geoObject, options, this._labelLayout, this._labelsCollection);
         labelInst.addToCollection();
-        return labelInst.getPlacemark().getOverlay().then(overlay => overlay.getLayout()).then(layout => {
-            const size = layout.getElement().firstChild.getBoundingClientRect();
-            labelInst.calculateLabelSize(size);
-            labelInst._initEvents();
-            setZoomVisibility(this._map, labelData, geoObject, size, options.labelForceVisibleZoom);
-            labelData.label = labelInst;
-            geoObject.properties.set('_labelData', labelData);
-        });
+        return labelInst.getPlacemark().getOverlay()
+            .then(overlay => overlay.getLayout())
+            .then(layout => {
+                const size = layout.getElement().firstChild.getBoundingClientRect();
+                labelInst.calculateLabelSize(size);
+                labelInst._initEvents();
+                setZoomVisibility(this._map, labelData, geoObject, size, options.labelForceVisibleZoom);
+                labelData.label = labelInst;
+                geoObject.properties.set('_labelData', labelData);
+            });
     }
 
     _recalculateGeoObject(geoObject) {
-        this._calculateGeoObject(geoObject).then(() => {
+        this._calculateGeoObjectLabelData(geoObject).then(() => {
             this._calculateAndSetLabelData(geoObject);
         });
     }
 
     _getOptions(obj) {
-        const result = {};
-        CONFIG.options.forEach((key) => {
+        return CONFIG.options.reduce((result, key) => {
             result[key] = obj.options.get(key);
-        });
-        return result;
+            return result;
+        }, {});
     }
 
     _getProperties(obj) {
-        const result = {};
-        CONFIG.properties.forEach((key) => {
+        return CONFIG.properties.reduce((result, key) => {
             result[key] = obj.properties.get(key);
-        });
-        return result;
+            return result;
+        }, {});
     }
 
     _clearLabelCollections() {
@@ -121,7 +126,7 @@ class Polylabel {
     }
 
     _initCollectionListeners() {
-        this._polygonsCollection.events.add(['add', 'remove'], this._onCollectionEvents, this);
+        this._polygonsCollection.events.add(['add', 'remove'], this._collectionEventHandler, this);
     }
 
     _onMapBoundsChange(event) {
@@ -130,8 +135,7 @@ class Polylabel {
         }
     }
 
-    _onCollectionEvents(event) {
-        console.log(event);
+    _collectionEventHandler(event) {
         switch (event.get('type')) {
             case 'add': {
                 this._recalculateGeoObject(event.get('child'));
@@ -149,7 +153,7 @@ class Polylabel {
     }
 
     _deleteListeners() {
-        this._polygonsCollection.events.remove(['add', 'remove'], this._onCollectionEvents, this);
+        this._polygonsCollection.events.remove(['add', 'remove'], this._collectionEventHandler, this);
         this._map.events.remove('boundschange', this._onMapBoundsChange, this);
     }
 }

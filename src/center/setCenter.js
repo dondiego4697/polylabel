@@ -10,9 +10,7 @@ import parseZoomData from 'parseZoomData';
  * May be one point(Array) or for certains zooms(Object).
 */
 export default function setCenter(target, geoObject, properties) {
-    const {
-        labelCenterCoords
-    } = properties;
+    const {labelCenterCoords} = properties;
     const autoCenterData = getPolylabelCenter(geoObject.geometry.getCoordinates(), 1.0);
     target.autoCenter = autoCenterData.center;
     target.polygonIndex = autoCenterData.index;
