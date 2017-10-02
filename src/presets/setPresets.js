@@ -1,17 +1,14 @@
+import presetStorage from 'option.presetStorage';
 const DATA = {
     Big: createFontSize('20px'),
     Small: createFontSize('12px'),
     BlackInWhiteOutline: createColorPreset('black', 'white'),
-    HhiteInBlackOutline: createColorPreset('white', 'black')
+    WhiteInBlackOutline: createColorPreset('white', 'black')
 };
 const PREFIX = 'polylabel#';
 
-export default function (parent) {
-    const presetStorage = ymaps.option.presetStorage;
-
-    parent.options.set('preset', 'polylabel#default');
+export default function () {
     presetStorage.add('polylabel#default', Object.assign({}, createFontSize('16px'), createColorPreset('black')));
-
     createPresets(presetStorage);
 }
 

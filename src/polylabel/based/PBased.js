@@ -1,0 +1,40 @@
+import CONFIG from 'config';
+import GeoObject from 'GeoObject';
+import presetStorage from 'option.presetStorage';
+
+class PBased {
+    constructor(map) {
+        this._map = map;
+    }
+
+    initMapListeners(callback) {
+        this._mapBoundsChangeCallback = callback;
+        this._map.events.add('boundschange', this._mapBoundsChangeHandler, this);
+    }
+
+    destroyMapListeners() {
+        this._map.events.remove('boundschange', this._mapBoundsChangeHandler, this);
+    }
+
+    _mapBoundsChangeHandler(event) {
+        if (event.get('newZoom') !== event.get('oldZoom')) {
+            this._mapBoundsChangeCallback();
+        }
+    }
+
+    getOptions(obj) {
+        return CONFIG.options.reduce((result, key) => {
+            result[key] = obj instanceof GeoObject ? obj.options.get(key) : obj.options[key];
+            return result;
+        }, {});
+    }
+
+    getProperties(obj) {
+        return CONFIG.properties.reduce((result, key) => {
+            result[key] = obj instanceof GeoObject ? obj.properties.get(key) : obj.properties[key];
+            return result;
+        }, {});
+    }
+}
+
+export default PBased;

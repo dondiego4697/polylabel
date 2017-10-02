@@ -2,10 +2,9 @@ export default {
     MIN_ZOOM: 0,
     MAX_ZOOM: 19,
     options: [
-        'labelHtml', 'labelText', 'labelForceVisibleZoom',
-        'labelTextClassName', 'labelTextSize',
-        'outlineColor', 'textColor',
-        'maxFitTextSize'
+        'labelLayout', 'labelDotLayout',
+        'labelClassName', 'labelForceVisible',
+        'labelTextColor', 'labelTextSize'
     ],
     properties: [
         'labelCenterCoords'

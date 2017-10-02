@@ -39,7 +39,8 @@
                         "util.array",
                         "isArray"
                     ],
-                    "Object.keys": "util.objectKeys"
+                    "Object.keys": "util.objectKeys",
+                    "WeakMap": "util.WeakMap"
                 }
             }
         ],

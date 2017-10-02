@@ -4,14 +4,13 @@ import parseZoomData from 'parseZoomData';
 /**
  * Set centers for each zoom;
  * @param {Object} target - Target object containing each zoom in properties.
- * @param {GeoObject} geoObject
+ * @param {Array} coordinates
  * @param {Object} properties
- * @param {Array | Object} properties.labelCenterCoords - Center data.
+ * @param {Array | Object} labelCenterCoords - Center data.
  * May be one point(Array) or for certains zooms(Object).
-*/
-export default function setCenter(target, geoObject, properties) {
-    const {labelCenterCoords} = properties;
-    const autoCenterData = getPolylabelCenter(geoObject.geometry.getCoordinates(), 1.0);
+ */
+export default function setCenter(target, coordinates, labelCenterCoords) {
+    const autoCenterData = getPolylabelCenter(coordinates, 1.0);
     target.autoCenter = autoCenterData.center;
     target.polygonIndex = autoCenterData.index;
 

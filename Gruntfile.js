@@ -17,13 +17,13 @@ module.exports = function (grunt) {
                 src: [
                     'build/pre/**/*.js'
                 ],
-                dest: 'build/util.polylabel.js'
+                dest: 'build/util.createPolylabel.js'
             }
         },
         uglify: {
             build: {
-                src: 'build/util.polylabel.js',
-                dest: 'build/util.polylabel.min.js'
+                src: 'build/util.createPolylabel.js',
+                dest: 'build/util.createPolylabel.min.js'
             }
         },
         watch: {

@@ -4,9 +4,12 @@
 <head>
     <title>Демо-пример</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&load=package.full,util.dom.style" type="text/javascript"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&load=package.full,util.dom.style&mode=debug" type="text/javascript"></script>
     <script src="../build/util.calculateArea.min.js" type="text/javascript"></script>
-    <script src="../build/util.polylabel.js" type="text/javascript"></script>
+    <script src="../build/util.createPolylabel.js" type="text/javascript"></script>
+    <script src="./support.js" type="text/javascript"></script>
+    <script src="./collection.js" type="text/javascript"></script>
+    <script src="./objectManager.js" type="text/javascript"></script>
     <style>
         html,
         body {
@@ -22,102 +25,19 @@
             height: 100%;
         }
 
-        .test-style {
+        .test-style-1 {
             color: red;
+            font-size: 15px
+        }
+
+        .test-style-2 {
+            color: green;
+            font-size: 20px
         }
     </style>
     <script>
-        let createGeoObject = function () {
-            return new ymaps.GeoObject({
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [
-                        [
-                            [55.75, 37.80],
-                            [55.80, 37.90],
-                            [55.75, 38.00],
-                            [55.70, 38.00],
-                            [55.70, 37.80]
-                        ]
-                    ],
-                    fillRule: "nonZero"
-                },
-                properties: {}
-            },
-                {
-                    fillColor: '#ffff0022',
-                    strokeColor: '#3caa3c88',
-                    strokeWidth: 7
-                });
-        }
-        let createMap = function () {
-            return new ymaps.Map("map", {
-                center: [55.9238145091058, 37.897131347654376],
-                zoom: 2,
-                controls: ['searchControl', 'zoomControl']
-            }, { searchControlProvider: 'yandex#search' });;
-        }
-        ymaps.ready(['util.polylabel']).then(function () {
-            let myMap = createMap();
-            ymaps.regions.load('001', {
-                lang: 'en',
-                quality: 2
-            }).then(function (result) {
-                //result.geoObjects.options.set({ labelForceVisibleZoom: '1_100' });
-                let labelObjectCollection = new ymaps.GeoObjectCollection();
-                let mainObjectCollection = result.geoObjects;
-                myMap.geoObjects.add(mainObjectCollection);
-                myMap.geoObjects.add(labelObjectCollection);
-
-                /* var htmlElem = document.createElement('div');
-                htmlElem.style.margin = 0;
-                htmlElem.innerHTML = '<img src="morty.jpg" width=50px height=50px style="border-radius: 3px;">'; */
-
-                let i = 0;
-                mainObjectCollection.each(function (geoObject) {
-                    if ([0, 1, 2, 3, 6].includes(i)) {
-                        //geoObject.options.set('maxFitTextSize', true); // ставится на все зумы, тк чтобы менять размер placemark, его надо при переключении зума менять, перерасчитывать
-                        //geoObject.options.set({ labelHtml: '<div style="margin: 0"><img src="../for-dev/morty.jpg" width=40px height=40px style="border-radius: 3px;"></div>' });
-                        /* geoObject.events.add('labelClick', function (event) {
-                            console.log(event);
-                        }); */
-                        //geoObject.options.set('preset', 'polylabel#SmallBlackInWhiteOutline');
-                        //geoObject.options.set({ labelForceVisibleZoom: true });
-                        //geoObject.options.set({ labelForceVisibleZoom: { 0: true, '2_3': false } });
-                    } else if ([8, 160, 170, 180, 190].includes(i)) {
-                        //geoObject.options.set('preset', 'polylabel#small|whiteInBlackOutline');
-                        //geoObject.options.set('preset', 'polylabel#small');
-                        /* geoObject.options.set({ labelForceVisibleZoom: true });
-                        geoObject.properties.set({
-                            labelCenterCoords: {
-                                1: [i - 140, i - 140],
-                                '2_100': [i - 200, i - 200],
-                            }
-                        }); */
-                    }
-                    geoObject.options.set({ labelText: geoObject.properties.get('hintContent') });
-                    geoObject.options.set('preset', 'polylabel#BlackInWhiteOutline');
-                    i++;
-                });
-                let polyLabeler = new ymaps.util.polylabel(myMap, labelObjectCollection, mainObjectCollection);
-
-                /* setTimeout(() => {
-                    polyLabeler.destroy();
-                }, 2000); */
-                /*setTimeout(() => {
-                    mainObjectCollection.get(0).options.set({ labelForceVisibleZoom: true });
-                    polyLabeler.update();
-                }, 2000);*/
-                /*setTimeout(() => {
-                    let go = createGeoObject();
-                    go.options.set({ labelText: 'new', preset: 'polylabel#BlackInWhiteOutline', labelForceVisibleZoom: true });
-                    mainObjectCollection.add(go);
-                }, 3000);
-                setTimeout(() => {
-                    mainObjectCollection.remove(mainObjectCollection.get(0));
-                }, 6000);*/
-            });
-        });
+        collectionTest();
+        //objectManagerTest();
     </script>
 </head>
 

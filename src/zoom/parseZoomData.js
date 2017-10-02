@@ -3,22 +3,29 @@ const {MIN_ZOOM, MAX_ZOOM} = CONFIG;
 
 /**
  * Parse data about zoom.
- * @param {Object} zoomData
+ * @param {Object|primitive} zoomData
  * Supported object properties view: number, string
  * @return {Object} - Returned object with zoom, where the parsed values.
  * @example
  * zoomData = {1: 'value1', '3_5': 'value2'}
  * return {1: 'value1', 2: undefined ... 3: 'value2', 4: 'value2', 5: 'value2', 6: undefined ...}
+ * zoomData = 'value123'
+ * return {1: 'value123' ... 19: 'value123'}
 */
 export default function parseZoomData(zoomData) {
-    return Object.keys(zoomData).reduce((result, key) => {
-        if (typeof key === 'string') {
-            parseString(result, key, zoomData[key]);
-        } else if (typeof key === 'number') {
-            parseNumber(result, key, zoomData[key]);
-        }
-        return result;
-    }, createDefZoomObj());
+    const valid = ['number', 'string', 'boolean'];
+    if (Object.prototype.toString.call(zoomData) === '[object Object]') {
+        return Object.keys(zoomData).reduce((result, key) => {
+            if (typeof key === 'string') {
+                parseString(result, key, zoomData[key]);
+            } else if (typeof key === 'number') {
+                parseNumber(result, key, zoomData[key]);
+            }
+            return result;
+        }, createDefZoomObj());
+    } else if (valid.includes(typeof zoomData)) {
+        return createDefZoomObj(zoomData);
+    }
 }
 
 function parseNumber(target, zoom, value) {
@@ -42,11 +49,11 @@ function parseString(target, zoom, value) {
     }
 }
 
-function createDefZoomObj() {
+function createDefZoomObj(val) {
     let i = MIN_ZOOM;
     let result = {};
     while (i <= MAX_ZOOM) {
-        result[i] = undefined;
+        result[i] = val;
         i++;
     }
     return result;
