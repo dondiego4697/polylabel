@@ -6,11 +6,15 @@ export default class XPlacemark extends overlayPlacemark {
     }
 
     getData() {
-        const polygon = this._data.geoObject.properties.get('labelPolygon');
+        const polygon = this._data.geoObject.properties.get('_labelPolygon');
+        if (polygon.options.get('labelLayout').indexOf('qweqwe') !== -1) {
+            debugger;
+        }
         return {
             geoObject: polygon,
-            geometry: polygon.geometry.getCoordinates(),
+            geometry: polygon.geometry,
             properties: polygon.properties,
+            options: polygon.options,
             state: polygon.state
         }
     }

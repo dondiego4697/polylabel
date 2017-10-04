@@ -9,21 +9,25 @@ export default function () {
     let result = {
         zoomInfo: {}, // Object with info for every zoom
         autoCenter: [0, 0],
-        polygonIndex: 0
+        polygonIndex: 0,
+        dotSize: {
+            height: 0,
+            width: 0
+        }
     };
     while (i <= MAX_ZOOM) {
         result.zoomInfo[i] = {
-            visible: false,
-            visibleForce: undefined,
+            visible: 'none', // label | dot | none
+            visibleForce: 'auto', // label | dot | none | auto
             center: undefined,
             style: {
                 className: undefined,
                 textSize: undefined,
-                textColor: undefined,
-                size: {
-                    width: undefined,
-                    height: undefined
-                }
+                textColor: undefined
+            },
+            labelSize: {
+                height: 0,
+                width: 0
             }
         };
         i++;

@@ -4,9 +4,7 @@ export default {
     options: [
         'labelLayout', 'labelDotLayout',
         'labelClassName', 'labelForceVisible',
-        'labelTextColor', 'labelTextSize'
+        'labelTextColor', 'labelTextSize', 'labelCenterCoords'
     ],
-    properties: [
-        'labelCenterCoords'
-    ]
+    properties: []
 };

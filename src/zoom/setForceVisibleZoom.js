@@ -1,7 +1,7 @@
 import parseZoomData from 'parseZoomData';
 
 export default function setForceVisibleZoom(target, labelForceVisibleZoom) {
-    if (typeof labelForceVisibleZoom === 'boolean') {
+    if (typeof labelForceVisibleZoom === 'string') {
         Object.keys(target.zoomInfo).forEach((z) => {
             target.zoomInfo[z].visibleForce = labelForceVisibleZoom;
         });

@@ -10,7 +10,15 @@ class Polylabel {
     }
 
     getLabelState(polygon) {
-        this._instance.getLabelState(polygon);
+        return this._instance.getLabelState(polygon);
+    }
+
+    getConfiguredVisibility(polygon) {
+        return this._instance.getConfiguredVisibility(polygon);
+    }
+
+    getCurrentVisibility(polygon) {
+        return this._instance.getCurrentVisibility(polygon);
     }
 
     destroy() {

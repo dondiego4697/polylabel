@@ -3,7 +3,7 @@ import getFirstZoomInside from 'getFirstZoomInside';
 /**
  * Fill info about visibility label in center
  */
-export default function setZoomVisibility(map, target, coords, labelSize, labelForceVisibleZoom) {
+export default function setZoomVisibility(map, target, coords, labelSize) {
     const autoZoom = getFirstZoomInside(map, target.autoCenter, coords, labelSize);
 
     Object.keys(target.zoomInfo).forEach((z) => {
