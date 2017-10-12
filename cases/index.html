@@ -36,8 +36,17 @@
         }
     </style>
     <script>
-        collectionTest();
-        //objectManagerTest();
+        var valid = {
+            collection: collectionTest,
+            objectManager: objectManagerTest
+        };
+        var result;
+        var getPairs = window.location.search.slice(1).split('&').map(function (pair) {
+            return pair.split('=');
+        }).forEach(function (pair) {
+            result = pair[0] === 'type' ? pair[1] : result;
+        });
+        typeof valid[result] !== 'undefined' ? valid[result]() : valid.collection();
     </script>
 </head>
 

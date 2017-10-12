@@ -1,4 +1,4 @@
-import parseZoomData from 'parseZoomData';
+import parseZoomData from 'src.util.zoom.parseZoomData';
 
 export default function setForceVisibleZoom(target, labelForceVisibleZoom) {
     if (typeof labelForceVisibleZoom === 'string') {

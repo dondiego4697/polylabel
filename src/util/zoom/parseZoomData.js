@@ -1,4 +1,4 @@
-import CONFIG from 'config';
+import CONFIG from 'src.config';
 const {MIN_ZOOM, MAX_ZOOM} = CONFIG;
 
 /**

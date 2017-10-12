@@ -1,11 +1,10 @@
-import CONFIG from 'config';
+import CONFIG from 'src.config';
 const {
     MIN_ZOOM,
     MAX_ZOOM
 } = CONFIG;
 
 export default function () {
-    let i = MIN_ZOOM;
     let result = {
         zoomInfo: {}, // Object with info for every zoom
         autoCenter: [0, 0],
@@ -15,7 +14,7 @@ export default function () {
             width: 0
         }
     };
-    while (i <= MAX_ZOOM) {
+    for (let i = MIN_ZOOM; i <= MAX_ZOOM; i++) {
         result.zoomInfo[i] = {
             visible: 'none', // label | dot | none
             visibleForce: 'auto', // label | dot | none | auto
@@ -30,7 +29,6 @@ export default function () {
                 width: 0
             }
         };
-        i++;
     }
     return result;
 }

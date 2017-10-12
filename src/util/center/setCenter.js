@@ -1,5 +1,5 @@
-import getPolylabelCenter from 'getPolesOfInaccessibility';
-import parseZoomData from 'parseZoomData';
+import getPolylabelCenter from 'src.util.getPolesOfInaccessibility';
+import parseZoomData from 'src.util.zoom.parseZoomData';
 
 /**
  * Set centers for each zoom;
@@ -18,7 +18,7 @@ export default function setCenter(target, coordinates, labelCenterCoords) {
         Object.keys(target.zoomInfo).forEach(z => {
             target.zoomInfo[z].center = labelCenterCoords;
         });
-    } else if (Object.prototype.toString.call(labelCenterCoords) === '[object Object]') {
+    } else if (labelCenterCoords && typeof labelCenterCoords === 'object') {
         const data = parseZoomData(labelCenterCoords);
         Object.keys(data).forEach(z => {
             if (typeof data[z] !== 'undefined') {

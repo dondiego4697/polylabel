@@ -1,17 +1,18 @@
-import PBased from 'PBased';
-import CONFIG from 'config';
-import LabelForCollection from 'LabelForCollection';
-import setCenter from 'setCenter';
-import setZoomVisibilityForGeoObject from 'setZoomVisibilityForGeoObject';
-import setForceVisibleZoom from 'setForceVisibleZoom';
-import parseZoomData from 'parseZoomData';
-import createDefaultLabelData from 'createDefaultLabelData';
+import PBased from 'src.polylabel.PolylabelBased';
+import Label from 'src.label.GeoObjectCollection.Label';
+import setCenter from 'src.util.center.setCenter';
+import setZoomVisibilityForGeoObject from 'src.util.zoom.setZoomVisibilityForGeoObject';
+import setForceVisibleZoom from 'src.util.zoom.setForceVisibleZoom';
+import parseZoomData from 'src.util.zoom.parseZoomData';
+import createDefaultLabelData from 'src.util.createDefaultLabelData';
 import GeoObjectCollection from 'GeoObjectCollection';
-import DataManager from 'data.Manager';
 import Monitor from 'Monitor';
 import nextTick from 'system.nextTick';
+import DataManager from 'data.Manager';
+import EventManager from 'event.Manager';
+import Event from 'Event';
 
-class PCollection extends PBased {
+export default class PolylabelCollection extends PBased {
 
     constructor(map, polygonsCollection) {
         super(map);
@@ -21,6 +22,7 @@ class PCollection extends PBased {
         this._polygonsCollection = polygonsCollection;
         this._currentConfiguredVisibility = new WeakMap();
         this._currentVisibility = new WeakMap();
+        this._layoutTemplateCache = {};
         this._initData();
     }
 
@@ -28,7 +30,7 @@ class PCollection extends PBased {
         this._deleteLabelStateListeners();
         this._deletePolygonsListeners();
         this._deletePolygonCollectionListeners();
-        this._clearLabelCollection();
+        this._deleteLabelCollection();
         this._map.geoObjects.remove(this._labelsCollection);
     }
 
@@ -46,29 +48,32 @@ class PCollection extends PBased {
 
     _initData() {
         this._map.geoObjects.add(this._labelsCollection);
-        this._calculateCollections(true).then(() => {
+        this._firstCalculatePolygonsCollection().then(() => {
             this._initMapListeners();
             this._initPolygonCollectionListeners();
             this._initPolygonsListeners();
+            this._initLabelCollectionListeners();
         });
     }
 
-    _calculateCollections(isFirstCalc) {
+    _firstCalculatePolygonsCollection() {
+        this._clearLabelCollection();
         let promises = [];
-        if (isFirstCalc) {
-            this._clearLabelCollection();
-        }
         this._polygonsCollection.each((polygon) => {
-            if (isFirstCalc) {
-                this._setLabelState(polygon, 'visible', undefined);
-                this._initLabelStateListener(polygon);
-                this._calculatePolygonLabelData(polygon).then((labelData) => {
-                    this._setLabelState(polygon, '_labelData', labelData);
-                    promises.push(this._analyzeAndSetLabelData(this._map, polygon, this._getLabelState(polygon, '_labelData')));
-                });
-            } else {
+            this._setLabelState(polygon, 'visible', undefined);
+            this._initLabelStateListener(polygon);
+            this._calculatePolygonLabelData(polygon).then((labelData) => {
+                this._setLabelState(polygon, '_labelData', labelData);
                 promises.push(this._analyzeAndSetLabelData(this._map, polygon, this._getLabelState(polygon, '_labelData')));
-            }
+            });
+        });
+        return Promise.all(promises);
+    }
+
+    _calculatePolygonsCollection() {
+        let promises = [];
+        this._polygonsCollection.each((polygon) => {
+            promises.push(this._analyzeAndSetLabelData(this._map, polygon, this._getLabelState(polygon, '_labelData')));
         });
         return Promise.all(promises);
     }
@@ -78,6 +83,13 @@ class PCollection extends PBased {
         this._labelsCollection.options.set({
             pane: 'phantom'
         });
+    }
+
+    _deleteLabelCollection() {
+        this._polygonsCollection.each(polygon => {
+            this._getLabelState(polygon, '_labelData').label.destroy();
+        });
+        this._clearLabelCollection();
     }
 
     _calculatePolygonLabelData(polygon, isLabelInstCreated) {
@@ -92,61 +104,56 @@ class PCollection extends PBased {
         if (isLabelInstCreated) {
             labelInst = this._getLabelState(polygon, '_labelData').label;
         } else {
-            labelInst = new LabelForCollection(polygon, options, properties, this._labelsCollection);
+            labelInst = new Label(polygon, options, properties, this._labelsCollection, this._layoutTemplateCache);
         }
         labelData.label = labelInst;
 
-        return new Promise(resolve => {
-            labelInst.addToCollection(['dot', 'label']).then(() => {
-                let { labelClassName, labelTextColor, labelTextSize } = options;
-                labelClassName = parseZoomData(labelClassName);
-                labelTextSize = parseZoomData(labelTextSize);
-                labelTextColor = parseZoomData(labelTextColor);
+        return labelInst.addToCollection().then(() => {
+            let { labelClassName, labelTextColor, labelTextSize } = options;
+            labelClassName = parseZoomData(labelClassName);
+            labelTextSize = parseZoomData(labelTextSize);
+            labelTextColor = parseZoomData(labelTextColor);
 
-                Object.keys(labelData.zoomInfo).forEach(z => {
-                    labelData.zoomInfo[z].style = {
-                        className: labelClassName ? labelClassName[z] : '',
-                        textSize: labelTextSize ? labelTextSize[z] : '',
-                        textColor: labelTextColor ? labelTextColor[z] : ''
-                    }
-                });
-                setZoomVisibilityForGeoObject(this._map, labelData, coordinates[labelData.polygonIndex], labelInst).then(() => {
-                    resolve(labelData);
-                });
+            Object.keys(labelData.zoomInfo).forEach(z => {
+                labelData.zoomInfo[z].style = {
+                    className: labelClassName ? labelClassName[z] : '',
+                    textSize: labelTextSize ? labelTextSize[z] : '',
+                    textColor: labelTextColor ? labelTextColor[z] : ''
+                }
             });
-        });
+        })
+            .then(() => setZoomVisibilityForGeoObject(this._map, labelData, coordinates[labelData.polygonIndex], labelInst))
+            .then(() => labelData);
     }
 
     _analyzeAndSetLabelData(map, polygon, labelData, visibleState) {
-        return new Promise(resolve => {
-            if (!labelData) {
-                resolve();
-                return;
-            }
-            let { zoomInfo, autoCenter, label } = labelData;
-            zoomInfo = zoomInfo[map.getZoom()];
-            this._setCurrentConfiguredVisibility(polygon, zoomInfo.visible, zoomInfo.visibleForce);
-            label._setCoordinates(zoomInfo.center || autoCenter);
-            visibleState = visibleState ? visibleState : zoomInfo.visibleForce;
-            let visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
-            this._setCurrentVisibility(polygon, visibleType);
-            label._setVisibility(visibleType);
-            if (['dot', 'label'].includes(visibleState)) {
-                label._setSize(visibleState, visibleState === 'dot' ? labelData.dotSize : zoomInfo.labelSize);
-            }
-            label._setStyles(zoomInfo.style);
-            resolve();
-        });
+        if (!labelData) {
+            return Promise.resolve();
+        }
+        //TODO наверное стоит завернуть установку всех параметров в Label
+        let { zoomInfo, autoCenter, label } = labelData;
+        zoomInfo = zoomInfo[map.getZoom()];
+        this._setCurrentConfiguredVisibility(polygon, zoomInfo.visible, zoomInfo.visibleForce);
+        label.setCoordinates(zoomInfo.center || autoCenter);
+        visibleState = visibleState ? visibleState : zoomInfo.visibleForce;
+        let visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
+        this._setCurrentVisibility(polygon, visibleType);
+        label.setVisibility(visibleType);
+        if (['dot', 'label'].includes(visibleState)) {
+            label.setSize(visibleState, visibleState === 'dot' ? labelData.dotSize : zoomInfo.labelSize);
+        }
+        label.setStyles(zoomInfo.style);
+        return Promise.resolve();
     }
 
     _setCurrentConfiguredVisibility(polygon, visible, visibleForce) {
-        let result = visibleForce && ['dot', 'label', 'none'].includes(visibleForce) ?
+        let result = visibleForce && ['dot', 'label', 'none'].indexOf(visibleForce) !== -1 ?
             visibleForce : visible;
         this._currentConfiguredVisibility.set(polygon, result);
     }
 
     _setCurrentVisibility(polygon, type) {
-        this._currentVisibility.set(polygon, ['dot', 'label'].includes(type) ? type : 'none');
+        this._currentVisibility.set(polygon, ['dot', 'label'].indexOf(type) !== -1 ? type : 'none');
     }
 
     _recalculateNewPolygon(polygon) {
@@ -181,15 +188,14 @@ class PCollection extends PBased {
     _polygonCollectionEventHandler(event) {
         switch (event.get('type')) {
             case 'add':
-                {
-                    this._recalculateNewPolygon(event.get('child'));
-                    break;
-                }
+                this._recalculateNewPolygon(event.get('child'));
+                break;
             case 'remove':
-                {
-                    this._getLabelState(event.get('child'), '_labelData').label.destroy();
-                    break;
+                let labelData = this._getLabelState(event.get('child'), '_labelData');
+                if (labelData) {
+                    labelData.label.destroy();
                 }
+                break;
         }
     }
 
@@ -200,14 +206,14 @@ class PCollection extends PBased {
     }
 
     _deleteLabelStateListener(polygon) {
-        let monitor = this._getLabelState(polygon, 'labelMonitor');
+        const monitor = this._getLabelState(polygon, 'labelMonitor');
         if (monitor) {
             monitor.removeAll();
         }
     }
 
     _initLabelStateListener(polygon) {
-        let monitor = new Monitor(this._labelsState.get(polygon));
+        const monitor = new Monitor(this._labelsState.get(polygon));
         this._setLabelState(polygon, 'labelMonitor', monitor);
         monitor.add('visible', (newValue) => {
             this._analyzeAndSetLabelData(this._map, polygon, this._getLabelState(polygon, '_labelData'), newValue);
@@ -231,20 +237,21 @@ class PCollection extends PBased {
 
     _onPolygonOptionsChangeHandler(event) {
         nextTick(() => {
-            if (!this._isPolygonParentChange) {
-                const polygon = event.get('target');
-                let labelData = this._getLabelState(polygon, '_labelData');
-                labelData.label._setLayoutTemplate(['label', 'dot'], [
-                    polygon.options.get('labelLayout'),
-                    polygon.options.get('labelDotLayout')
-                ]).then(() => {
-                        this._calculatePolygonLabelData(polygon, true).then(labelData => {
-                            this._setLabelState(polygon, '_labelData', labelData);
-                            this._analyzeAndSetLabelData(this._map, polygon, this._getLabelState(polygon, '_labelData'));
-                        });
-                    });
+            const polygon = event.get('target');
+            let labelData = this._getLabelState(polygon, '_labelData');
+            if (this._isPolygonParentChange || !labelData) {
+                this._isPolygonParentChange = false;
+                return;
             }
-            this._isPolygonParentChange = false;
+            labelData.label.setLayoutTemplate({
+                label: polygon.options.get('labelLayout'),
+                dot: polygon.options.get('labelDotLayout')
+            })
+            .then(() => this._calculatePolygonLabelData(polygon, true))
+            .then((labelData) => {
+                this._setLabelState(polygon, '_labelData', labelData);
+                this._analyzeAndSetLabelData(this._map, polygon, this._getLabelState(polygon, '_labelData'));
+            });
         });
     }
 
@@ -252,10 +259,33 @@ class PCollection extends PBased {
         this._polygonsCollection.events.add(['add', 'remove'], this._polygonCollectionEventHandler, this);
     }
 
+    _initLabelCollectionListeners() {
+        let controller = {
+            onBeforeEventFiring: function (events, type, event) {
+                if (event.get('target').options.get('pane') === 'phantom') {
+                    return false;
+                }
+                let polygon = event.get('target').properties.get('_labelPolygon');
+                if (polygon) {
+                    let newEvent = new Event({
+                        target: polygon,
+                        type: `label${type}`
+                    }, event);
+                    polygon.events.fire(`label${type}`, newEvent);
+                }
+                return false;
+            }
+        }
+        let eventManager = new EventManager({
+            controllers: [controller]
+        });
+        this._labelsCollection.events.setParent(eventManager);
+    }
+
     _initMapListeners() {
         this.initMapListeners(() => {
             this._clearVisibilityInLabelsState();
-            this._calculateCollections();
+            this._calculatePolygonsCollection();
         });
     }
 
@@ -275,5 +305,3 @@ class PCollection extends PBased {
         polygon.events.remove('parentchange', this._onPolygonParentChangeHandler, this);
     }
 }
-
-export default PCollection;

@@ -1,4 +1,4 @@
-import getFirstZoomInside from 'getFirstZoomInside';
+import getFirstZoomInside from 'src.util.zoom.getFirstZoomInside';
 
 /**
  * Fill info about visibility label in center

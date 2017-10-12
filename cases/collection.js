@@ -56,6 +56,11 @@ let collectionTest = function () {
                     ? 'label' : 'dot');
             });
 
+            mainObjectCollection.events.add(['labelmouseenter', 'labelmouseleave'], function (event) {
+                var state = polyLabeler.getLabelState(event.get('target'));
+                state.set('visible', event.get('type') === 'labelmouseleave' ? undefined : 'label');
+            });
+
             setTimeout(() => {
                 mainObjectCollection.get(0).options.set({
                     labelLayout: '<div>{{geoObject.options.qwe}}{{properties.asd}}</div>',

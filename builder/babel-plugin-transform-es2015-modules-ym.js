@@ -11,13 +11,24 @@ module.exports = function ({ template, types: t }) {
 
     function getModuleName(state) {
         const sourceExtension = state.opts.sourceExtension || '.esn.js';
+        let root = 'util.createPolylabel';
 
         let moduleName = state.file.opts.filenameRelative;
+        if (moduleName.indexOf(root) !== -1) {
+            return root;
+        }
         if (moduleName.endsWith(sourceExtension)) {
             moduleName = moduleName.substr(0, moduleName.length - sourceExtension.length);
         }
-        const splitModuleName = moduleName.split('/');
-        moduleName = splitModuleName[splitModuleName.length - 1];
+        moduleName = moduleName.replace(/\//g, '.');
+
+        const parts = moduleName.split('.');
+        if (parts.length >= 2 && parts[parts.length - 1] === capitalize(parts[parts.length - 2])) {
+            parts.splice(parts.length - 2, 1);
+            moduleName = parts.join('.');
+        } else if (parts[parts.length - 1] === 'index') {
+            moduleName = parts.slice(0, parts.length - 1).join('.');
+        }
         const jsIndex = moduleName.indexOf('.js');
         moduleName = moduleName.slice(0, jsIndex !== -1 ? jsIndex : moduleName.length);
         return moduleName;

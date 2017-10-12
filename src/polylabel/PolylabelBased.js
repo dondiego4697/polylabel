@@ -1,8 +1,7 @@
-import CONFIG from 'config';
+import CONFIG from 'src.config';
 import GeoObject from 'GeoObject';
-import presetStorage from 'option.presetStorage';
 
-class PBased {
+export default class PolylabelBased {
     constructor(map) {
         this._map = map;
     }
@@ -36,5 +35,3 @@ class PBased {
         }, {});
     }
 }
-
-export default PBased;

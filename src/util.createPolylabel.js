@@ -1,4 +1,6 @@
-import Polylabel from 'Polylabel';
+import PCollection from 'src.polylabel.PolylabelCollection';
+import PObjectManager from 'src.polylabel.PolylabelObjectManager';
+import ObjectManager from 'ObjectManager';
 
 /**
  * @param {Map} map
@@ -7,5 +9,7 @@ import Polylabel from 'Polylabel';
  * @param {GeoObjectCollection} data.polygonsCollection
  */
 export default function (map, data) {
-    return new Polylabel(map, data);
+    return data instanceof ObjectManager ?
+        new PObjectManager(map, data) :
+        new PCollection(map, data);;
 }
