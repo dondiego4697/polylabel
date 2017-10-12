@@ -1,12 +1,12 @@
 import isInside from 'src.util.checkPointPosition';
 import CONFIG from 'src.config';
 
-export default function (map, center, coords, size) {
+export default function (map, center, coords, size, offset) {
     let { MIN_ZOOM: i, MAX_ZOOM: j } = CONFIG;
     let zoom;
     while (i < j) {
         zoom = Math.floor((i + j) / 2);
-        let elemPoints = getElemPoints(map, center, zoom, size);
+        let elemPoints = getElemPoints(map, center, zoom, size, offset || [0, 0]);
         if (checkIsInside(map, coords, elemPoints, zoom)) {
             j = zoom;
         } else {
@@ -16,9 +16,11 @@ export default function (map, center, coords, size) {
     return i;
 }
 
-function getElemPoints(map, center, zoom, size) {
+function getElemPoints(map, center, zoom, size, offset) {
     const centerProj = map.options.get('projection').toGlobalPixels(center, zoom);
-    const { width: w, height: h } = size;
+    let { width: w, height: h } = size;
+    h += offset[0];
+    w += offset[1];
     let elemPoints = [];
     elemPoints.push(
         [centerProj[0] - w / 2, centerProj[1] - h / 2], [centerProj[0] - w / 2, centerProj[1] + h / 2], [centerProj[0] + w / 2, centerProj[1] - h / 2], [centerProj[0] + w / 2, centerProj[1] + h / 2]);

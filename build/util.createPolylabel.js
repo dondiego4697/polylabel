@@ -2,7 +2,7 @@ ymaps.modules.define('src.config', [], function (_provide) {
     _provide({
         MIN_ZOOM: 0,
         MAX_ZOOM: 19,
-        options: ['labelLayout', 'labelDotLayout', 'labelClassName', 'labelForceVisible', 'labelTextColor', 'labelTextSize', 'labelCenterCoords'],
+        options: ['labelLayout', 'labelDotLayout', 'labelClassName', 'labelForceVisible', 'labelTextColor', 'labelTextSize', 'labelCenterCoords', 'labelOffset'],
         properties: []
     });
 });
@@ -168,17 +168,17 @@ ymaps.modules.define('src.label.GeoObjectCollection.Label', ['util.extend', 'uti
             });
         };
 
-        Label.prototype.setSize = function setSize(type, size) {
+        Label.prototype.centerAndSetIconShape = function centerAndSetIconShape(type, size, offset) {
             var h = size.height / 2;
             var w = size.width / 2;
 
             this._placemark[type].options.set({
                 iconShape: {
                     type: 'Rectangle',
-                    coordinates: [[-w, -h], [w, h]]
+                    coordinates: [[-w + offset[1], -h + offset[0]], [w + offset[1], h + offset[0]]]
                 },
-                iconLabelTop: -h,
-                iconLabelLeft: -w
+                iconLabelTop: -h + offset[0],
+                iconLabelLeft: -w + offset[1]
             });
         };
 
@@ -234,7 +234,7 @@ ymaps.modules.define("src.label.util.getLayoutSize", [], function (_provide) {
 });
 //# sourceMappingURL=getLayoutSize.js.map
 
-ymaps.modules.define('src.label.util.LabelPlacemarkOverlay', ['util.defineClass', 'overlay.Placemark'], function (_provide, _utilDefineClass, overlayPlacemark) {
+ymaps.modules.define('src.label.util.LabelPlacemarkOverlay', ['util.defineClass', 'overlay.Placemark', 'option.Manager'], function (_provide, _utilDefineClass, overlayPlacemark, OptionManager) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -264,7 +264,7 @@ ymaps.modules.define('src.label.util.LabelPlacemarkOverlay', ['util.defineClass'
                 geoObject: polygon,
                 geometry: polygon.geometry,
                 properties: polygon.properties,
-                options: polygon.options,
+                //options: polygon.options, TODO невозможно переопределить опции, потому что https://github.yandex-team.ru/mapsapi/jsapi-v2/blob/master/src/overlay/view/abstract/baseWithLayout/overlay.view.BaseWithLayout.js#L99
                 state: polygon.state
             };
         };
@@ -326,7 +326,7 @@ ymaps.modules.define('src.polylabel.PolylabelBased', ['src.config', 'GeoObject']
 });
 //# sourceMappingURL=PolylabelBased.js.map
 
-ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', 'util.objectKeys', 'src.polylabel.PolylabelBased', 'src.label.GeoObjectCollection.Label', 'src.util.center.setCenter', 'src.util.zoom.setZoomVisibilityForGeoObject', 'src.util.zoom.setForceVisibleZoom', 'src.util.zoom.parseZoomData', 'src.util.createDefaultLabelData', 'GeoObjectCollection', 'Monitor', 'system.nextTick', 'data.Manager', 'event.Manager', 'Event'], function (_provide, _utilDefineClass, _utilObjectKeys, PBased, Label, setCenter, setZoomVisibilityForGeoObject, setForceVisibleZoom, parseZoomData, createDefaultLabelData, GeoObjectCollection, Monitor, nextTick, DataManager, EventManager, Event) {
+ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', 'util.objectKeys', 'src.polylabel.PolylabelBased', 'src.label.GeoObjectCollection.Label', 'src.util.center.setCenter', 'src.util.style.setOffset', 'src.util.zoom.setZoomVisibilityForGeoObject', 'src.util.zoom.setForceVisibleZoom', 'src.util.zoom.parseZoomData', 'src.util.createDefaultLabelData', 'GeoObjectCollection', 'Monitor', 'system.nextTick', 'data.Manager', 'event.Manager', 'Event'], function (_provide, _utilDefineClass, _utilObjectKeys, PBased, Label, setCenter, setOffset, setZoomVisibilityForGeoObject, setForceVisibleZoom, parseZoomData, createDefaultLabelData, GeoObjectCollection, Monitor, nextTick, DataManager, EventManager, Event) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -443,6 +443,7 @@ ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', '
             setForceVisibleZoom(labelData, options.labelForceVisible);
             var coordinates = polygon.geometry.getCoordinates();
             setCenter(labelData, coordinates, options.labelCenterCoords);
+            setOffset(labelData, options.labelOffset);
 
             var labelInst = void 0;
             if (isLabelInstCreated) {
@@ -491,8 +492,8 @@ ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', '
             var visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
             this._setCurrentVisibility(polygon, visibleType);
             label.setVisibility(visibleType);
-            if (['dot', 'label'].includes(visibleState)) {
-                label.setSize(visibleState, visibleState === 'dot' ? labelData.dotSize : zoomInfo.labelSize);
+            if (['dot', 'label'].includes(visibleType)) {
+                label.centerAndSetIconShape(visibleType, visibleType === 'dot' ? labelData.dotSize : zoomInfo.labelSize, zoomInfo.labelOffset);
             }
             label.setStyles(zoomInfo.style);
             return Promise.resolve();
@@ -606,6 +607,7 @@ ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', '
                     _this12._isPolygonParentChange = false;
                     return;
                 }
+                labelData.label.setVisibility('phantom');
                 labelData.label.setLayoutTemplate({
                     label: polygon.options.get('labelLayout'),
                     dot: polygon.options.get('labelDotLayout')
@@ -851,7 +853,8 @@ ymaps.modules.define('src.util.createDefaultLabelData', ['src.config'], function
                 labelSize: {
                     height: 0,
                     width: 0
-                }
+                },
+                labelOffset: [0, 0]
             };
         }
         return result;
@@ -1149,15 +1152,41 @@ ymaps.modules.define('src.util.stringReplacer', [], function (_provide) {
 });
 //# sourceMappingURL=stringReplacer.js.map
 
+ymaps.modules.define('src.util.style.setOffset', ['util.array', 'util.objectKeys', 'src.util.zoom.parseZoomData'], function (_provide, _utilArray, _utilObjectKeys, parseZoomData) {
+    var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+        return typeof obj;
+    } : function (obj) {
+        return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+
+    function setOffset(target, labelOffset) {
+        if (_utilArray.isArray(labelOffset)) {
+            _utilObjectKeys(target.zoomInfo).forEach(function (z) {
+                target.zoomInfo[z].labelOffset = labelOffset;
+            });
+        } else if (labelOffset && (typeof labelOffset === 'undefined' ? 'undefined' : _typeof(labelOffset)) === 'object') {
+            var data = parseZoomData(labelOffset);
+            _utilObjectKeys(data).forEach(function (z) {
+                if (typeof data[z] !== 'undefined') {
+                    target.zoomInfo[z].labelOffset = data[z];
+                }
+            });
+        }
+    }
+
+    _provide(setOffset)
+});
+//# sourceMappingURL=setOffset.js.map
+
 ymaps.modules.define('src.util.zoom.getFirstZoomInside', ['src.util.checkPointPosition', 'src.config'], function (_provide, isInside, CONFIG) {
-    _provide(function (map, center, coords, size) {
+    _provide(function (map, center, coords, size, offset) {
         var i = CONFIG.MIN_ZOOM,
             j = CONFIG.MAX_ZOOM;
 
         var zoom = void 0;
         while (i < j) {
             zoom = Math.floor((i + j) / 2);
-            var elemPoints = getElemPoints(map, center, zoom, size);
+            var elemPoints = getElemPoints(map, center, zoom, size, offset || [0, 0]);
             if (checkIsInside(map, coords, elemPoints, zoom)) {
                 j = zoom;
             } else {
@@ -1167,11 +1196,13 @@ ymaps.modules.define('src.util.zoom.getFirstZoomInside', ['src.util.checkPointPo
         return i;
     });
 
-    function getElemPoints(map, center, zoom, size) {
+    function getElemPoints(map, center, zoom, size, offset) {
         var centerProj = map.options.get('projection').toGlobalPixels(center, zoom);
         var w = size.width,
             h = size.height;
 
+        h += offset[0];
+        w += offset[1];
         var elemPoints = [];
         elemPoints.push([centerProj[0] - w / 2, centerProj[1] - h / 2], [centerProj[0] - w / 2, centerProj[1] + h / 2], [centerProj[0] + w / 2, centerProj[1] - h / 2], [centerProj[0] + w / 2, centerProj[1] + h / 2]);
         return elemPoints;
@@ -1306,13 +1337,12 @@ ymaps.modules.define('src.util.zoom.setZoomVisibility', ['util.objectKeys', 'src
 
 ymaps.modules.define('src.util.zoom.setZoomVisibilityForGeoObject', ['util.objectKeys', 'src.util.zoom.getFirstZoomInside', 'src.label.util.getLayoutSize'], function (_provide, _utilObjectKeys, getFirstZoomInside, getLayoutSize) {
     _provide(function (map, labelData, coordinates, labelInst) {
-        var zoomBuff = {};
-
         var dotSize = getLayoutSize(labelInst.getLayout().dot);
         labelData.dotSize = dotSize;
+
         analyseDot(map, labelInst, labelData, coordinates, labelInst.getLayout().dot, dotSize);
         _utilObjectKeys(labelData.zoomInfo).forEach(function (z) {
-            analyseLabel(map, labelInst, labelData, z, coordinates, labelInst.getLayout().label, zoomBuff);
+            analyseLabel(map, labelInst, labelData, z, coordinates, labelInst.getLayout().label);
         });
         return Promise.resolve();
     });
@@ -1327,38 +1357,25 @@ ymaps.modules.define('src.util.zoom.setZoomVisibilityForGeoObject', ['util.objec
     }
 
     function analyseDot(map, labelInst, labelData, coordinates, layout, size) {
-        labelInst.setSize('dot', size);
-        var autoZoom = getFirstZoomInside(map, labelData.autoCenter, coordinates, size);
-        var zoom = autoZoom;
         _utilObjectKeys(labelData.zoomInfo).forEach(function (z) {
             var zoomInfo = labelData.zoomInfo[z];
+            var zoom = void 0;
             if (!zoomInfo.center) {
-                zoom = autoZoom;
+                zoom = getFirstZoomInside(map, labelData.autoCenter, coordinates, size, zoomInfo.labelOffset);
             } else {
-                zoom = getFirstZoomInside(map, zoomInfo.center, coordinates, size);
+                zoom = getFirstZoomInside(map, zoomInfo.center, coordinates, size, zoomInfo.labelOffset);
             }
             zoomInfo.visible = getVisible(zoomInfo.visible, 'dot', z >= zoom);
         });
     }
 
-    function analyseLabel(map, labelInst, labelData, zoom, coordinates, layout, zoomBuff) {
+    function analyseLabel(map, labelInst, labelData, zoom, coordinates, layout) {
         var zoomInfo = labelData.zoomInfo[zoom];
-        var key = 'label_' + zoomInfo.style.className + '_' + zoomInfo.style.textSize;
-        if (zoomBuff[key]) {
-            zoomInfo.visible = getVisible(zoomInfo.visible, 'label', zoom >= zoomBuff[key].firstZoom);
-            zoomInfo.labelSize = zoomBuff[key].size;
-            return;
-        }
         labelInst.setStyles(zoomInfo.style);
         var size = getLayoutSize(layout);
-        labelInst.setSize('label', size);
         zoomInfo.labelSize = size;
-        var firstZoom = getFirstZoomInside(map, zoomInfo.center || labelData.autoCenter, coordinates, size);
+        var firstZoom = getFirstZoomInside(map, zoomInfo.center || labelData.autoCenter, coordinates, size, zoomInfo.labelOffset);
         zoomInfo.visible = getVisible(zoomInfo.visible, 'label', zoom >= firstZoom);
-        zoomBuff[key] = {
-            firstZoom: firstZoom,
-            size: size
-        };
     }
 });
 //# sourceMappingURL=setZoomVisibilityForGeoObject.js.map

@@ -27,7 +27,8 @@ export default function () {
             labelSize: {
                 height: 0,
                 width: 0
-            }
+            },
+            labelOffset: [0, 0]
         };
     }
     return result;

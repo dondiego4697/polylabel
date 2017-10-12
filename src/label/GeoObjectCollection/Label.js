@@ -150,7 +150,7 @@ export default class Label {
         });
     }
 
-    setSize(type, size) {
+    centerAndSetIconShape(type, size, offset) {
         const h = size.height / 2;
         const w = size.width / 2;
 
@@ -158,12 +158,12 @@ export default class Label {
             iconShape: {
                 type: 'Rectangle',
                 coordinates: [
-                    [-w, -h],
-                    [w, h]
+                    [-w + offset[1], -h + offset[0]],
+                    [w + offset[1], h + offset[0]]
                 ]
             },
-            iconLabelTop: -h,
-            iconLabelLeft: -w
+            iconLabelTop: -h + offset[0],
+            iconLabelLeft: -w + offset[1]
         });
     }
 

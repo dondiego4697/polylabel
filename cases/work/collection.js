@@ -14,7 +14,7 @@ let collectionTest = function () {
             mainObjectCollection.options.set({
                 labelClassName: {
                     3: 'test-style-1',
-                    4: 'test-style-2'
+                    '4_5': 'test-style-2'
                 },
                 labelTextSize: 30,
                 labelTextColor: {
@@ -24,8 +24,17 @@ let collectionTest = function () {
             });
             mainObjectCollection.each(function (geoObject) {
                 if ([0, 1, 2, 3, 6].includes(i)) {
+                    if (i === 0) {
+                        geoObject.options.set({
+                            labelOffset: {
+                                '0_1': [100, 100],
+                                2: [100, 100]
+                            }
+                        });
+                    }
                     geoObject.options.set({
-                        labelForceVisible: 'label'
+                        labelForceVisible: 'label',
+                        labelLayout: '<img src="/for-dev/morty.jpg" width=50px height=50px style="border-radius: 3px;">'
                     });
                     geoObject.options.set({
                         labelTextColor: {
@@ -40,12 +49,15 @@ let collectionTest = function () {
                             '2_100': [i - 200, i - 200],
                         },
                         labelForceVisible: 'label',
-                        labelTextSize: 12
+                        labelTextSize: 12,
+                        labelLayout: '<div>{{properties.hintContent}}</div>'
+                    });
+                } else {
+                    geoObject.options.set({
+                        labelOffset: [50, 50],
+                        labelLayout: '<div>{{properties.hintContent}}</div>',
                     });
                 }
-                geoObject.options.set({
-                    labelLayout: '<div>{{properties.hintContent}}</div>',
-                });
                 i++;
             });
             let polyLabeler = new ymaps.util.createPolylabel(myMap, mainObjectCollection);
@@ -81,9 +93,9 @@ let collectionTest = function () {
                 go.options.set({ labelLayout: 'new', labelForceVisible: 'label' });
                 mainObjectCollection.add(go);
             }, 3000);
-            setTimeout(() => {
+            /* setTimeout(() => {
                 mainObjectCollection.remove(mainObjectCollection.get(0));
-            }, 5000);
+            }, 5000); */
         });
     });
 }

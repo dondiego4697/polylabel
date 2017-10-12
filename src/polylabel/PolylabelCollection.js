@@ -1,6 +1,7 @@
 import PBased from 'src.polylabel.PolylabelBased';
 import Label from 'src.label.GeoObjectCollection.Label';
 import setCenter from 'src.util.center.setCenter';
+import setOffset from 'src.util.style.setOffset';
 import setZoomVisibilityForGeoObject from 'src.util.zoom.setZoomVisibilityForGeoObject';
 import setForceVisibleZoom from 'src.util.zoom.setForceVisibleZoom';
 import parseZoomData from 'src.util.zoom.parseZoomData';
@@ -99,6 +100,7 @@ export default class PolylabelCollection extends PBased {
         setForceVisibleZoom(labelData, options.labelForceVisible);
         const coordinates = polygon.geometry.getCoordinates();
         setCenter(labelData, coordinates, options.labelCenterCoords);
+        setOffset(labelData, options.labelOffset);
 
         let labelInst;
         if (isLabelInstCreated) {
@@ -139,8 +141,8 @@ export default class PolylabelCollection extends PBased {
         let visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
         this._setCurrentVisibility(polygon, visibleType);
         label.setVisibility(visibleType);
-        if (['dot', 'label'].includes(visibleState)) {
-            label.setSize(visibleState, visibleState === 'dot' ? labelData.dotSize : zoomInfo.labelSize);
+        if (['dot', 'label'].includes(visibleType)) {
+            label.centerAndSetIconShape(visibleType, visibleType === 'dot' ? labelData.dotSize : zoomInfo.labelSize, zoomInfo.labelOffset);
         }
         label.setStyles(zoomInfo.style);
         return Promise.resolve();
@@ -243,15 +245,16 @@ export default class PolylabelCollection extends PBased {
                 this._isPolygonParentChange = false;
                 return;
             }
+            labelData.label.setVisibility('phantom');
             labelData.label.setLayoutTemplate({
                 label: polygon.options.get('labelLayout'),
                 dot: polygon.options.get('labelDotLayout')
             })
-            .then(() => this._calculatePolygonLabelData(polygon, true))
-            .then((labelData) => {
-                this._setLabelState(polygon, '_labelData', labelData);
-                this._analyzeAndSetLabelData(this._map, polygon, this._getLabelState(polygon, '_labelData'));
-            });
+                .then(() => this._calculatePolygonLabelData(polygon, true))
+                .then((labelData) => {
+                    this._setLabelState(polygon, '_labelData', labelData);
+                    this._analyzeAndSetLabelData(this._map, polygon, this._getLabelState(polygon, '_labelData'));
+                });
         });
     }
 
