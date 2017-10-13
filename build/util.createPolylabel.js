@@ -2,7 +2,7 @@ ymaps.modules.define('src.config', [], function (_provide) {
     _provide({
         MIN_ZOOM: 0,
         MAX_ZOOM: 19,
-        options: ['labelLayout', 'labelDotLayout', 'labelClassName', 'labelForceVisible', 'labelTextColor', 'labelTextSize', 'labelCenterCoords', 'labelOffset'],
+        options: ['labelLayout', 'labelDotLayout', 'labelClassName', 'labelForceVisible', 'labelTextColor', 'labelTextSize', 'labelCenterCoords', 'labelOffset', 'labelPermissibleInaccuracyOfVisibility'],
         properties: []
     });
 });
@@ -326,7 +326,7 @@ ymaps.modules.define('src.polylabel.PolylabelBased', ['src.config', 'GeoObject']
 });
 //# sourceMappingURL=PolylabelBased.js.map
 
-ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', 'util.objectKeys', 'src.polylabel.PolylabelBased', 'src.label.GeoObjectCollection.Label', 'src.util.center.setCenter', 'src.util.style.setOffset', 'src.util.zoom.setZoomVisibilityForGeoObject', 'src.util.zoom.setForceVisibleZoom', 'src.util.zoom.parseZoomData', 'src.util.createDefaultLabelData', 'GeoObjectCollection', 'Monitor', 'system.nextTick', 'data.Manager', 'event.Manager', 'Event'], function (_provide, _utilDefineClass, _utilObjectKeys, PBased, Label, setCenter, setOffset, setZoomVisibilityForGeoObject, setForceVisibleZoom, parseZoomData, createDefaultLabelData, GeoObjectCollection, Monitor, nextTick, DataManager, EventManager, Event) {
+ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', 'util.objectKeys', 'src.polylabel.PolylabelBased', 'src.label.GeoObjectCollection.Label', 'src.util.center.setCenter', 'src.util.style.setOffset', 'src.util.style.setPermissibleInaccuracyOfVisibility', 'src.util.zoom.setZoomVisibilityForGeoObject', 'src.util.zoom.setForceVisibleZoom', 'src.util.zoom.parseZoomData', 'src.util.createDefaultLabelData', 'GeoObjectCollection', 'Monitor', 'system.nextTick', 'data.Manager', 'event.Manager', 'Event'], function (_provide, _utilDefineClass, _utilObjectKeys, PBased, Label, setCenter, setOffset, setPermissibleInaccuracyOfVisibility, setZoomVisibilityForGeoObject, setForceVisibleZoom, parseZoomData, createDefaultLabelData, GeoObjectCollection, Monitor, nextTick, DataManager, EventManager, Event) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -444,7 +444,7 @@ ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', '
             var coordinates = polygon.geometry.getCoordinates();
             setCenter(labelData, coordinates, options.labelCenterCoords);
             setOffset(labelData, options.labelOffset);
-
+            setPermissibleInaccuracyOfVisibility(labelData, options.labelPermissibleInaccuracyOfVisibility);
             var labelInst = void 0;
             if (isLabelInstCreated) {
                 labelInst = this._getLabelState(polygon, '_labelData').label;
@@ -480,7 +480,7 @@ ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', '
             if (!labelData) {
                 return Promise.resolve();
             }
-            //TODO наверное стоит завернуть установку всех параметров в Label
+            //TODO наверное стоит завернуть установку всех параметров в Label, повысим производительность
             var zoomInfo = labelData.zoomInfo,
                 autoCenter = labelData.autoCenter,
                 label = labelData.label;
@@ -854,7 +854,8 @@ ymaps.modules.define('src.util.createDefaultLabelData', ['src.config'], function
                     height: 0,
                     width: 0
                 },
-                labelOffset: [0, 0]
+                labelOffset: [0, 0],
+                permissibleInaccuracyOfVisibility: 0
             };
         }
         return result;
@@ -1178,16 +1179,43 @@ ymaps.modules.define('src.util.style.setOffset', ['util.array', 'util.objectKeys
 });
 //# sourceMappingURL=setOffset.js.map
 
+ymaps.modules.define('src.util.style.setPermissibleInaccuracyOfVisibility', ['util.objectKeys', 'src.util.zoom.parseZoomData'], function (_provide, _utilObjectKeys, parseZoomData) {
+    var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+        return typeof obj;
+    } : function (obj) {
+        return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+
+    _provide(function (target, visibilityData) {
+        if (typeof visibilityData === 'number') {
+            _utilObjectKeys(target.zoomInfo).forEach(function (z) {
+                target.zoomInfo[z].permissibleInaccuracyOfVisibility = visibilityData;
+            });
+        } else if (visibilityData && (typeof visibilityData === 'undefined' ? 'undefined' : _typeof(visibilityData)) === 'object') {
+            var data = parseZoomData(visibilityData);
+            _utilObjectKeys(data).forEach(function (z) {
+                if (typeof data[z] !== 'undefined') {
+                    target.zoomInfo[z].permissibleInaccuracyOfVisibility = data[z];
+                }
+            });
+        }
+    });
+});
+//# sourceMappingURL=setPermissibleInaccuracyOfVisibility.js.map
+
 ymaps.modules.define('src.util.zoom.getFirstZoomInside', ['src.util.checkPointPosition', 'src.config'], function (_provide, isInside, CONFIG) {
-    _provide(function (map, center, coords, size, offset) {
+    _provide(function (map, center, coords, size, offset, resolvedInaccuracy) {
         var i = CONFIG.MIN_ZOOM,
             j = CONFIG.MAX_ZOOM;
 
         var zoom = void 0;
         while (i < j) {
             zoom = Math.floor((i + j) / 2);
-            var elemPoints = getElemPoints(map, center, zoom, size, offset || [0, 0]);
-            if (checkIsInside(map, coords, elemPoints, zoom)) {
+            var elemPoints = getElemPoints(map, center, zoom, size, offset || [0, 0], resolvedInaccuracy);
+            /* if (resolvedInaccuracy > 0) {
+                debugger;
+            } */
+            if (checkIsInside(map, coords, elemPoints.normal, zoom) || checkIsInside(map, coords, elemPoints.withInaccuracy, zoom)) {
                 j = zoom;
             } else {
                 i = zoom + 1;
@@ -1196,7 +1224,8 @@ ymaps.modules.define('src.util.zoom.getFirstZoomInside', ['src.util.checkPointPo
         return i;
     });
 
-    function getElemPoints(map, center, zoom, size, offset) {
+    function getElemPoints(map, center, zoom, size, offset, resolvedInaccuracy) {
+        var ri = isNaN(Number(resolvedInaccuracy)) ? 0 : Number(resolvedInaccuracy);
         var centerProj = map.options.get('projection').toGlobalPixels(center, zoom);
         var w = size.width,
             h = size.height;
@@ -1204,8 +1233,13 @@ ymaps.modules.define('src.util.zoom.getFirstZoomInside', ['src.util.checkPointPo
         h += offset[0];
         w += offset[1];
         var elemPoints = [];
+        var elemPointsWithInaccuracy = [];
         elemPoints.push([centerProj[0] - w / 2, centerProj[1] - h / 2], [centerProj[0] - w / 2, centerProj[1] + h / 2], [centerProj[0] + w / 2, centerProj[1] - h / 2], [centerProj[0] + w / 2, centerProj[1] + h / 2]);
-        return elemPoints;
+        elemPointsWithInaccuracy.push([elemPoints[0][0] + ri > centerProj[0] ? centerProj[0] : elemPoints[0][0] + ri, elemPoints[0][1] + ri > centerProj[1] ? centerProj[1] : elemPoints[0][1] + ri], [elemPoints[1][0] + ri > centerProj[0] ? centerProj[0] : elemPoints[1][0] + ri, elemPoints[1][1] - ri < centerProj[1] ? centerProj[1] : elemPoints[1][1] - ri], [elemPoints[2][0] - ri < centerProj[0] ? centerProj[0] : elemPoints[2][0] - ri, elemPoints[2][1] + ri > centerProj[1] ? centerProj[1] : elemPoints[2][1] + ri], [elemPoints[3][0] - ri < centerProj[0] ? centerProj[0] : elemPoints[3][0] - ri, elemPoints[3][1] - ri < centerProj[1] ? centerProj[1] : elemPoints[3][1] - ri]);
+        return {
+            normal: elemPoints,
+            withInaccuracy: elemPointsWithInaccuracy
+        };
     }
 
     function checkIsInside(map, coords, elemPoints, zoom) {
@@ -1361,9 +1395,9 @@ ymaps.modules.define('src.util.zoom.setZoomVisibilityForGeoObject', ['util.objec
             var zoomInfo = labelData.zoomInfo[z];
             var zoom = void 0;
             if (!zoomInfo.center) {
-                zoom = getFirstZoomInside(map, labelData.autoCenter, coordinates, size, zoomInfo.labelOffset);
+                zoom = getFirstZoomInside(map, labelData.autoCenter, coordinates, size, zoomInfo.labelOffset, zoomInfo.permissibleInaccuracyOfVisibility);
             } else {
-                zoom = getFirstZoomInside(map, zoomInfo.center, coordinates, size, zoomInfo.labelOffset);
+                zoom = getFirstZoomInside(map, zoomInfo.center, coordinates, size, zoomInfo.labelOffset, zoomInfo.permissibleInaccuracyOfVisibility);
             }
             zoomInfo.visible = getVisible(zoomInfo.visible, 'dot', z >= zoom);
         });
@@ -1374,7 +1408,7 @@ ymaps.modules.define('src.util.zoom.setZoomVisibilityForGeoObject', ['util.objec
         labelInst.setStyles(zoomInfo.style);
         var size = getLayoutSize(layout);
         zoomInfo.labelSize = size;
-        var firstZoom = getFirstZoomInside(map, zoomInfo.center || labelData.autoCenter, coordinates, size, zoomInfo.labelOffset);
+        var firstZoom = getFirstZoomInside(map, zoomInfo.center || labelData.autoCenter, coordinates, size, zoomInfo.labelOffset, zoomInfo.permissibleInaccuracyOfVisibility);
         zoomInfo.visible = getVisible(zoomInfo.visible, 'label', zoom >= firstZoom);
     }
 });

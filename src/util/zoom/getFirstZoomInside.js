@@ -1,13 +1,16 @@
 import isInside from 'src.util.checkPointPosition';
 import CONFIG from 'src.config';
 
-export default function (map, center, coords, size, offset) {
+export default function (map, center, coords, size, offset, resolvedInaccuracy) {
     let { MIN_ZOOM: i, MAX_ZOOM: j } = CONFIG;
     let zoom;
     while (i < j) {
         zoom = Math.floor((i + j) / 2);
-        let elemPoints = getElemPoints(map, center, zoom, size, offset || [0, 0]);
-        if (checkIsInside(map, coords, elemPoints, zoom)) {
+        let elemPoints = getElemPoints(map, center, zoom, size, offset || [0, 0], resolvedInaccuracy);
+        /* if (resolvedInaccuracy > 0) {
+            debugger;
+        } */
+        if (checkIsInside(map, coords, elemPoints.normal, zoom) || checkIsInside(map, coords, elemPoints.withInaccuracy, zoom)) {
             j = zoom;
         } else {
             i = zoom + 1;
@@ -16,15 +19,42 @@ export default function (map, center, coords, size, offset) {
     return i;
 }
 
-function getElemPoints(map, center, zoom, size, offset) {
+function getElemPoints(map, center, zoom, size, offset, resolvedInaccuracy) {
+    const ri = isNaN(Number(resolvedInaccuracy)) ? 0 : Number(resolvedInaccuracy);
     const centerProj = map.options.get('projection').toGlobalPixels(center, zoom);
     let { width: w, height: h } = size;
     h += offset[0];
     w += offset[1];
     let elemPoints = [];
+    let elemPointsWithInaccuracy = [];
     elemPoints.push(
-        [centerProj[0] - w / 2, centerProj[1] - h / 2], [centerProj[0] - w / 2, centerProj[1] + h / 2], [centerProj[0] + w / 2, centerProj[1] - h / 2], [centerProj[0] + w / 2, centerProj[1] + h / 2]);
-    return elemPoints;
+        [centerProj[0] - w / 2, centerProj[1] - h / 2],
+        [centerProj[0] - w / 2, centerProj[1] + h / 2],
+        [centerProj[0] + w / 2, centerProj[1] - h / 2],
+        [centerProj[0] + w / 2, centerProj[1] + h / 2]
+    );
+    elemPointsWithInaccuracy.push(
+            [
+                elemPoints[0][0] + ri > centerProj[0] ? centerProj[0] : elemPoints[0][0] + ri,
+                elemPoints[0][1] + ri > centerProj[1] ? centerProj[1] : elemPoints[0][1] + ri
+            ],
+            [
+                elemPoints[1][0] + ri > centerProj[0] ? centerProj[0] : elemPoints[1][0] + ri,
+                elemPoints[1][1] - ri < centerProj[1] ? centerProj[1] : elemPoints[1][1] - ri
+            ],
+            [
+                elemPoints[2][0] - ri < centerProj[0] ? centerProj[0] : elemPoints[2][0] - ri,
+                elemPoints[2][1] + ri > centerProj[1] ? centerProj[1] : elemPoints[2][1] + ri
+            ],
+            [
+                elemPoints[3][0] - ri < centerProj[0] ? centerProj[0] : elemPoints[3][0] - ri,
+                elemPoints[3][1] - ri < centerProj[1] ? centerProj[1] : elemPoints[3][1] - ri
+            ]
+    );
+    return {
+        normal: elemPoints,
+        withInaccuracy: elemPointsWithInaccuracy
+    };
 }
 
 function checkIsInside(map, coords, elemPoints, zoom) {

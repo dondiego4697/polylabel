@@ -2,6 +2,7 @@ import PBased from 'src.polylabel.PolylabelBased';
 import Label from 'src.label.GeoObjectCollection.Label';
 import setCenter from 'src.util.center.setCenter';
 import setOffset from 'src.util.style.setOffset';
+import setPermissibleInaccuracyOfVisibility from 'src.util.style.setPermissibleInaccuracyOfVisibility';
 import setZoomVisibilityForGeoObject from 'src.util.zoom.setZoomVisibilityForGeoObject';
 import setForceVisibleZoom from 'src.util.zoom.setForceVisibleZoom';
 import parseZoomData from 'src.util.zoom.parseZoomData';
@@ -101,7 +102,7 @@ export default class PolylabelCollection extends PBased {
         const coordinates = polygon.geometry.getCoordinates();
         setCenter(labelData, coordinates, options.labelCenterCoords);
         setOffset(labelData, options.labelOffset);
-
+        setPermissibleInaccuracyOfVisibility(labelData, options.labelPermissibleInaccuracyOfVisibility);
         let labelInst;
         if (isLabelInstCreated) {
             labelInst = this._getLabelState(polygon, '_labelData').label;
@@ -132,7 +133,7 @@ export default class PolylabelCollection extends PBased {
         if (!labelData) {
             return Promise.resolve();
         }
-        //TODO наверное стоит завернуть установку всех параметров в Label
+        //TODO наверное стоит завернуть установку всех параметров в Label, повысим производительность
         let { zoomInfo, autoCenter, label } = labelData;
         zoomInfo = zoomInfo[map.getZoom()];
         this._setCurrentConfiguredVisibility(polygon, zoomInfo.visible, zoomInfo.visibleForce);

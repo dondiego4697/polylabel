@@ -9,7 +9,8 @@ export default {
         'labelTextColor',
         'labelTextSize',
         'labelCenterCoords',
-        'labelOffset'
+        'labelOffset',
+        'labelPermissibleInaccuracyOfVisibility'
     ],
     properties: []
 };

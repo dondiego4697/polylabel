@@ -28,7 +28,8 @@ export default function () {
                 height: 0,
                 width: 0
             },
-            labelOffset: [0, 0]
+            labelOffset: [0, 0],
+            permissibleInaccuracyOfVisibility: 0
         };
     }
     return result;

@@ -24,14 +24,11 @@ let collectionTest = function () {
             });
             mainObjectCollection.each(function (geoObject) {
                 if ([0, 1, 2, 3, 6].includes(i)) {
-                    if (i === 0) {
+                    /* if (i === 0) {
                         geoObject.options.set({
-                            labelOffset: {
-                                '0_1': [100, 100],
-                                2: [100, 100]
-                            }
+                            labelPermissibleInaccuracyOfVisibility: 100
                         });
-                    }
+                    } */
                     geoObject.options.set({
                         labelForceVisible: 'label',
                         labelLayout: '<img src="/for-dev/morty.jpg" width=50px height=50px style="border-radius: 3px;">'
@@ -54,7 +51,9 @@ let collectionTest = function () {
                     });
                 } else {
                     geoObject.options.set({
-                        labelOffset: [50, 50],
+                        labelPermissibleInaccuracyOfVisibility: {
+                            '4_5': 0
+                        },
                         labelLayout: '<div>{{properties.hintContent}}</div>',
                     });
                 }

@@ -30,9 +30,9 @@ function analyseDot(map, labelInst, labelData, coordinates, layout, size) {
         let zoomInfo = labelData.zoomInfo[z];
         let zoom;
         if (!zoomInfo.center) {
-            zoom = getFirstZoomInside(map, labelData.autoCenter, coordinates, size, zoomInfo.labelOffset);
+            zoom = getFirstZoomInside(map, labelData.autoCenter, coordinates, size, zoomInfo.labelOffset, zoomInfo.permissibleInaccuracyOfVisibility);
         } else {
-            zoom = getFirstZoomInside(map, zoomInfo.center, coordinates, size, zoomInfo.labelOffset);
+            zoom = getFirstZoomInside(map, zoomInfo.center, coordinates, size, zoomInfo.labelOffset, zoomInfo.permissibleInaccuracyOfVisibility);
         }
         zoomInfo.visible = getVisible(zoomInfo.visible, 'dot', z >= zoom);
     });
@@ -44,6 +44,6 @@ function analyseLabel(map, labelInst, labelData, zoom, coordinates, layout) {
     let size = getLayoutSize(layout);
     zoomInfo.labelSize = size;
     const firstZoom = getFirstZoomInside(map, zoomInfo.center || labelData.autoCenter,
-        coordinates, size, zoomInfo.labelOffset);
+        coordinates, size, zoomInfo.labelOffset, zoomInfo.permissibleInaccuracyOfVisibility);
     zoomInfo.visible = getVisible(zoomInfo.visible, 'label', zoom >= firstZoom);
 }
