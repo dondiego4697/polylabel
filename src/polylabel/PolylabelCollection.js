@@ -146,16 +146,25 @@ export default class PolylabelCollection extends PBase {
         return Promise.resolve();
     }
 
+    /**
+     * Устанавливает статус текущей видимости для полигона (автоматически рассчитанный)
+     */
     _setCurrentConfiguredVisibility(polygon, visible, visibleForce) {
         let result = visibleForce && ['dot', 'label', 'none'].indexOf(visibleForce) !== -1 ?
             visibleForce : visible;
         this._currentConfiguredVisibility.set(polygon, result);
     }
 
+    /**
+     * Устанавливает статус текущей видимости для полигона
+     */
     _setCurrentVisibility(polygon, type) {
         this._currentVisibility.set(polygon, ['dot', 'label'].indexOf(type) !== -1 ? type : 'none');
     }
 
+    /**
+     * Рассчитывает добавленный в коллекцию новый полигон
+     */
     _recalculateNewPolygon(polygon) {
         this._calculatePolygonLabelData(polygon).then((labelInst) => {
             this._setInLabelState(polygon, 'label', labelInst);
@@ -186,14 +195,12 @@ export default class PolylabelCollection extends PBase {
         }
     }
 
+    /**
+     * Сбрасывает состояние visible всех подписей (на новых зумах оно не конфликтовало с рассчитанными данными, тк у state приоритет выше)
+     */
     _clearVisibilityInLabelsState() {
         this._polygonsCollection.each(polygon => {
             this._setInLabelState(polygon, 'visible', undefined);
-
-            /* const labelInst = this._getFromLabelState(polygon, 'label');
-            if (labelInst) {
-                labelInst.setVisibility('none');
-            } */
         });
     }
 
@@ -214,6 +221,9 @@ export default class PolylabelCollection extends PBase {
         });
     }
 
+    /**
+     * Создает слушатели событий на полигон
+     */
     _initPolygonListener(polygon) {
         polygon.events.add(['optionschange', 'propertieschange'], this._onPolygonOptionsChangeHandler, this);
         polygon.events.add('parentchange', this._onPolygonParentChangeHandler, this);
@@ -238,10 +248,7 @@ export default class PolylabelCollection extends PBase {
 
             labelInst.setVisibility('phantom');
             //TODO возможно, стоит сделать проверку на шаблоны, если не поменялся, то просто перерасчитать
-            labelInst.setLayoutTemplate({
-                label: polygon.options.get('labelLayout'),
-                dot: polygon.options.get('labelDotLayout')
-            });
+            labelInst.setLayoutTemplate();
 
             this._calculatePolygonLabelData(polygon, true).then((labelInst) => {
                 this._setInLabelState(polygon, 'label', labelInst);
@@ -250,6 +257,9 @@ export default class PolylabelCollection extends PBase {
         });
     }
 
+    /**
+     * Создает слушатели событий на коллекцию полигонов
+     */
     _initPolygonCollectionListeners() {
         this._polygonsCollection.events.add(['add', 'remove'], this._polygonCollectionEventHandler, this);
     }
@@ -269,6 +279,9 @@ export default class PolylabelCollection extends PBase {
         }
     }
 
+    /**
+     * Делает проброс событий с подписи на соответствующий полигон
+     */
     _initLabelCollectionListeners() {
         let controller = {
             onBeforeEventFiring: function (events, type, event) {
@@ -307,6 +320,9 @@ export default class PolylabelCollection extends PBase {
         });
     }
 
+    /**
+     * Удаляет слушатель на изменение состояния видимости подписи у полигона
+     */
     _deleteLabelStateListener(polygon) {
         const monitor = this._getFromLabelState(polygon, 'labelMonitor');
         if (monitor) {
@@ -314,6 +330,9 @@ export default class PolylabelCollection extends PBase {
         }
     }
 
+    /**
+     * Удаляет слушатели событий с коллекции полигонов
+     */
     _deletePolygonCollectionListeners() {
         this._polygonsCollection.events.remove(['add', 'remove'], this._polygonCollectionEventHandler, this);
         this.destroyMapListeners();
@@ -325,6 +344,9 @@ export default class PolylabelCollection extends PBase {
         });
     }
 
+    /**
+     * Удаляет слушатели событий с полигона
+     */
     _deletePolygonListener(polygon) {
         polygon.events.remove(['optionschange', 'propertieschange'], this._onPolygonOptionsChangeHandler, this);
         polygon.events.remove('parentchange', this._onPolygonParentChangeHandler, this);

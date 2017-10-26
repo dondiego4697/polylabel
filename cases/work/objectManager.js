@@ -77,8 +77,9 @@ let objectManagerTest = function () {
                 state.set('visible', event.get('type') === 'labelmouseleave' ? undefined : 'label');
             });
 
-            /* setTimeout(() => {
-                let polygon = objectManager.objects.getById('polygon0');
+            setTimeout(() => {
+                //1. изменить layout
+                /* let polygon = objectManager.objects.getById('polygon0');
                 polygon.properties.hintContent = 'asd123';
                 objectManager.objects.setObjectOptions(polygon.id, {
                     labelLayout: '<div>{{options.qwe}}{{properties.asd}}</div>',
@@ -86,8 +87,22 @@ let objectManagerTest = function () {
                     labelTextSize: 80,
                     labelTextColor: 'pink',
                     qwe: 'йопт'
-                });
-            }, 3000); */
+                }); */
+                setTimeout(() => {
+                    //2. изменить опции, которые присутствуют в layout
+                    /* mainObjectCollection.get(0).options.set({
+                        qwe: 22
+                    }); */
+                    //3. изменить опции, которые важны для модуля
+                    /* mainObjectCollection.get(0).options.set({
+                        labelTextSize: 22
+                    }); */
+                    //4. изменить параметры, которые присутствуют в layout
+                    /* mainObjectCollection.get(0).properties.set({
+                        asd: 'йопт'
+                    }); */
+                }, 2000);
+            }, 3000);
 
             /* setTimeout(() => {
                 polyLabeler.destroy();

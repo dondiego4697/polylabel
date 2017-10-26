@@ -1,7 +1,5 @@
 import Placemark from 'Placemark';
 import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
-import createLabelLayoutTemplate from 'src.label.util.createLabelLayoutTemplate';
-import createDotLayoutTemplate from 'src.label.util.createDotLayoutTemplate';
 import LabelData from 'src.label.LabelData';
 import getLayoutTemplate from 'src.label.util.getLayoutTemplate';
 
@@ -54,11 +52,7 @@ export default class Label {
     }
 
     _init() {
-        const { labelLayout, labelDotLayout } = getLayoutTemplate(this._polygon.options, this._layoutTemplateCache);
-        const layout = {
-            label: labelLayout,
-            dot: labelDotLayout
-        };
+        const layout = getLayoutTemplate(this._polygon.options, this._layoutTemplateCache);
         ['label', 'dot'].forEach(key => {
             this._placemark[key] = Label._createPlacemark(`${key}#${this._polygon.id}`, {
                 properties: Object.assign({}, {

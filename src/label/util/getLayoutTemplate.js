@@ -6,7 +6,7 @@ export default function (options, layoutTemplateCache) {
         labelLayout: createLabelLayoutTemplate,
         labelDotLayout: createDotLayoutTemplate
     };
-    return ['labelLayout', 'labelDotLayout'].reduce((result, key) => {
+    const { labelLayout, labelDotLayout } = ['labelLayout', 'labelDotLayout'].reduce((result, key) => {
         let layoutTemplate = options[key];
         let layoutTemplateKey = !layoutTemplate ? `default${key}` : layoutTemplate;
 
@@ -19,4 +19,8 @@ export default function (options, layoutTemplateCache) {
         }
         return result;
     }, {});
+    return {
+        label: labelLayout,
+        dot: labelDotLayout
+    };
 }

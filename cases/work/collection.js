@@ -73,28 +73,40 @@ let collectionTest = function () {
             });
 
             setTimeout(() => {
+                //1. изменить layout
                 mainObjectCollection.get(0).options.set({
                     labelLayout: '<div>{{geoObject.options.qwe}}{{properties.asd}}</div>',
                     labelTextSize: 80,
                     labelTextColor: 'pink',
                     qwe: 'йопт'
                 });
-                mainObjectCollection.get(0).properties.set({
-                    asd: 'йопт'
-                });
+                setTimeout(() => {
+                    //2. изменить опции, которые присутствуют в layout
+                    /* mainObjectCollection.get(0).options.set({
+                        qwe: 22
+                    }); */
+                    //3. изменить опции, которые важны для модуля
+                    /* mainObjectCollection.get(0).options.set({
+                        labelTextSize: 22
+                    }); */
+                    //4. изменить параметры, которые присутствуют в layout
+                    /* mainObjectCollection.get(0).properties.set({
+                        asd: 'йопт'
+                    }); */
+                }, 2000);
             }, 3000);
 
-           /*  setTimeout(() => {
-                polyLabeler.destroy();
-            }, 2000); */
-            setTimeout(() => {
+            /*  setTimeout(() => {
+                 polyLabeler.destroy();
+             }, 2000); */
+            /* setTimeout(() => {
                 let go = createGeoObject();
                 go.options.set({ labelLayout: 'new', labelForceVisible: 'label' });
                 mainObjectCollection.add(go);
             }, 3000);
             setTimeout(() => {
                 mainObjectCollection.remove(mainObjectCollection.get(0));
-            }, 5000);
+            }, 5000); */
         });
     });
 }

@@ -9,7 +9,7 @@ ymaps.modules.define('src.config', [], function (_provide) {
 });
 //# sourceMappingURL=config.js.map
 
-ymaps.modules.define('src.label.GeoObjectCollection.Label', ['util.extend', 'util.objectKeys', 'Placemark', 'src.label.util.LabelPlacemarkOverlay', 'src.label.util.createLabelLayoutTemplate', 'src.label.util.createDotLayoutTemplate', 'src.label.LabelData', 'src.label.util.getLayoutTemplate'], function (_provide, _utilExtend, _utilObjectKeys, Placemark, LabelPlacemarkOverlay, createLabelLayoutTemplate, createDotLayoutTemplate, LabelData, getLayoutTemplate) {
+ymaps.modules.define('src.label.GeoObjectCollection.Label', ['util.extend', 'util.objectKeys', 'Placemark', 'src.label.util.LabelPlacemarkOverlay', 'src.label.LabelData', 'src.label.util.getLayoutTemplate'], function (_provide, _utilExtend, _utilObjectKeys, Placemark, LabelPlacemarkOverlay, LabelData, getLayoutTemplate) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -33,6 +33,13 @@ ymaps.modules.define('src.label.GeoObjectCollection.Label', ['util.extend', 'uti
             this._layoutTemplateCache = layoutTemplateCache;
             this._init();
         }
+
+        /**
+         * Устанавливает данные о подписи на каждый зум
+         * @param {Object} options - опции, необходимые для подписи
+         * @param {Object} zoomRangeOptions - опции для нескольких зумов, необходимые для подписи
+         */
+
 
         Label.prototype.setLabelData = function setLabelData(options, zoomRangeOptions) {
             this._data = new LabelData(this._polygon, options, zoomRangeOptions);
@@ -96,19 +103,12 @@ ymaps.modules.define('src.label.GeoObjectCollection.Label', ['util.extend', 'uti
         Label.prototype._init = function _init() {
             var _this3 = this;
 
-            var _getLayoutTemplate = getLayoutTemplate(this._polygon.options, this._layoutTemplateCache),
-                labelLayout = _getLayoutTemplate.labelLayout,
-                labelDotLayout = _getLayoutTemplate.labelDotLayout;
-
-            var layout = {
-                label: labelLayout,
-                dot: labelDotLayout
-            };
+            var layout = getLayoutTemplate(this._polygon.options.getAll(), this._layoutTemplateCache);
             ['label', 'dot'].forEach(function (key) {
                 _this3._placemark[key] = Label._createPlacemark({
                     properties: _utilExtend({}, {
                         'labelPolygon': _this3._polygon
-                    }, _this3._polygon.properties),
+                    }, _this3._polygon.properties.getAll()),
                     options: _this3._polygon.options.getAll()
                 }, layout[key]);
             });
@@ -117,8 +117,8 @@ ymaps.modules.define('src.label.GeoObjectCollection.Label', ['util.extend', 'uti
         Label._createPlacemark = function _createPlacemark(params, layout) {
             var options = _utilExtend({}, {
                 iconLayout: layout,
-                iconLabelPosition: 'absolute',
-                pointOverlay: LabelPlacemarkOverlay
+                pointOverlay: LabelPlacemarkOverlay,
+                iconLabelPosition: 'absolute'
             }, params.options);
             return new Placemark([0, 0], params.properties, options);
         };
@@ -149,15 +149,13 @@ ymaps.modules.define('src.label.GeoObjectCollection.Label', ['util.extend', 'uti
             };
         };
 
-        Label.prototype.setLayoutTemplate = function setLayoutTemplate(params) {
+        Label.prototype.setLayoutTemplate = function setLayoutTemplate() {
             var _this4 = this;
 
-            var createLayoutTemplate = {
-                label: createLabelLayoutTemplate,
-                dot: createDotLayoutTemplate
-            };
-            _utilObjectKeys(params).forEach(function (type) {
-                var iconLayout = createLayoutTemplate[type](params[type]);
+            var layout = getLayoutTemplate(this._polygon.options.getAll(), this._layoutTemplateCache);
+            debugger;
+            _utilObjectKeys(layout).forEach(function (type) {
+                var iconLayout = layout[type];
                 if (_this4._placemark[type].getParent()) {
                     _this4._placemark[type].options.set({ iconLayout: iconLayout });
                 }
@@ -347,7 +345,7 @@ ymaps.modules.define('src.label.LabelData', ['util.objectKeys', 'src.config', 's
 });
 //# sourceMappingURL=LabelData.js.map
 
-ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.objectKeys', 'Placemark', 'src.label.util.LabelPlacemarkOverlay', 'src.label.util.createLabelLayoutTemplate', 'src.label.util.createDotLayoutTemplate', 'src.label.LabelData', 'src.label.util.getLayoutTemplate'], function (_provide, _utilExtend, _utilObjectKeys, Placemark, LabelPlacemarkOverlay, createLabelLayoutTemplate, createDotLayoutTemplate, LabelData, getLayoutTemplate) {
+ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.objectKeys', 'Placemark', 'src.label.util.LabelPlacemarkOverlay', 'src.label.LabelData', 'src.label.util.getLayoutTemplate'], function (_provide, _utilExtend, _utilObjectKeys, Placemark, LabelPlacemarkOverlay, LabelData, getLayoutTemplate) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -408,14 +406,7 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
         Label.prototype._init = function _init() {
             var _this3 = this;
 
-            var _getLayoutTemplate = getLayoutTemplate(this._polygon.options, this._layoutTemplateCache),
-                labelLayout = _getLayoutTemplate.labelLayout,
-                labelDotLayout = _getLayoutTemplate.labelDotLayout;
-
-            var layout = {
-                label: labelLayout,
-                dot: labelDotLayout
-            };
+            var layout = getLayoutTemplate(this._polygon.options, this._layoutTemplateCache);
             ['label', 'dot'].forEach(function (key) {
                 _this3._placemark[key] = Label._createPlacemark(key + '#' + _this3._polygon.id, {
                     properties: _utilExtend({}, {
@@ -814,7 +805,8 @@ ymaps.modules.define('src.label.util.getLayoutTemplate', ['src.label.util.create
             labelLayout: createLabelLayoutTemplate,
             labelDotLayout: createDotLayoutTemplate
         };
-        return ['labelLayout', 'labelDotLayout'].reduce(function (result, key) {
+
+        var _reduce = ['labelLayout', 'labelDotLayout'].reduce(function (result, key) {
             var layoutTemplate = options[key];
             var layoutTemplateKey = !layoutTemplate ? 'default' + key : layoutTemplate;
 
@@ -826,7 +818,14 @@ ymaps.modules.define('src.label.util.getLayoutTemplate', ['src.label.util.create
                 layoutTemplateCache[layoutTemplateKey] = template;
             }
             return result;
-        }, {});
+        }, {}),
+            labelLayout = _reduce.labelLayout,
+            labelDotLayout = _reduce.labelDotLayout;
+
+        return {
+            label: labelLayout,
+            dot: labelDotLayout
+        };
     });
 });
 //# sourceMappingURL=getLayoutTemplate.js.map
@@ -1111,11 +1110,6 @@ ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', '
 
             this._polygonsCollection.each(function (polygon) {
                 _this8._setInLabelState(polygon, 'visible', undefined);
-
-                /* const labelInst = this._getFromLabelState(polygon, 'label');
-                if (labelInst) {
-                    labelInst.setVisibility('none');
-                } */
             });
         };
 
@@ -1163,10 +1157,7 @@ ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', '
 
                 labelInst.setVisibility('phantom');
                 //TODO возможно, стоит сделать проверку на шаблоны, если не поменялся, то просто перерасчитать
-                labelInst.setLayoutTemplate({
-                    label: polygon.options.get('labelLayout'),
-                    dot: polygon.options.get('labelDotLayout')
-                });
+                labelInst.setLayoutTemplate();
 
                 _this11._calculatePolygonLabelData(polygon, true).then(function (labelInst) {
                     _this11._setInLabelState(polygon, 'label', labelInst);

@@ -1,7 +1,5 @@
 import Placemark from 'Placemark';
 import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
-import createLabelLayoutTemplate from 'src.label.util.createLabelLayoutTemplate';
-import createDotLayoutTemplate from 'src.label.util.createDotLayoutTemplate';
 import LabelData from 'src.label.LabelData';
 import getLayoutTemplate from 'src.label.util.getLayoutTemplate';
 
@@ -24,6 +22,11 @@ export default class Label {
         this._init();
     }
 
+    /**
+     * Устанавливает данные о подписи на каждый зум
+     * @param {Object} options - опции, необходимые для подписи
+     * @param {Object} zoomRangeOptions - опции для нескольких зумов, необходимые для подписи
+     */
     setLabelData(options, zoomRangeOptions) {
         this._data = new LabelData(this._polygon, options, zoomRangeOptions);
         return this._data;
@@ -73,22 +76,22 @@ export default class Label {
         return Promise.all(layouts);
     }
 
+    /**
+     * Возвращает layout для подписи
+     * @param {string} type - тип подписи (label | dot), у которой необходимо получить layout
+     */
     getLabelLayout(type) {
         return this._placemark[type].getOverlay()
             .then(overlay => overlay.getLayout());
     }
 
     _init() {
-        const { labelLayout, labelDotLayout } = getLayoutTemplate(this._polygon.options, this._layoutTemplateCache);
-        const layout = {
-            label: labelLayout,
-            dot: labelDotLayout
-        };
+        const layout = getLayoutTemplate(this._polygon.options.getAll(), this._layoutTemplateCache);
         ['label', 'dot'].forEach(key => {
             this._placemark[key] = Label._createPlacemark({
                 properties: Object.assign({}, {
                     'labelPolygon': this._polygon
-                }, this._polygon.properties),
+                }, this._polygon.properties.getAll()),
                 options: this._polygon.options.getAll()
             }, layout[key]);
         });
@@ -97,12 +100,19 @@ export default class Label {
     static _createPlacemark(params, layout) {
         const options = Object.assign({}, {
             iconLayout: layout,
-            iconLabelPosition: 'absolute',
-            pointOverlay: LabelPlacemarkOverlay
+            pointOverlay: LabelPlacemarkOverlay,
+            iconLabelPosition: 'absolute'
         }, params.options);
         return new Placemark([0, 0], params.properties, options);
     }
 
+    /**
+     * Устанавливает необходимые свойства подписи для текущего зума
+     * @return {Object}
+     * visible - рассчитанный тип, который виден
+     * visibleForce - рассчитанный тип, который виден принудительно
+     * visibleType - текущий тип, который виден
+     */
     setDataByZoom(zoom, visibleState) {
         let { zoomInfo, autoCenter, dotVisible, dotSize } = this._data.getAll();
         zoomInfo = zoomInfo[zoom];
@@ -124,19 +134,23 @@ export default class Label {
         }
     }
 
-    setLayoutTemplate(params) {
-        const createLayoutTemplate = {
-            label: createLabelLayoutTemplate,
-            dot: createDotLayoutTemplate
-        };
-        Object.keys(params).forEach((type) => {
-            let iconLayout = createLayoutTemplate[type](params[type]);
+    /**
+     * Устанавливает template для подписи
+     */
+    setLayoutTemplate() {
+        const layout = getLayoutTemplate(this._polygon.options.getAll(), this._layoutTemplateCache);
+        debugger;
+        Object.keys(layout).forEach((type) => {
+            let iconLayout = layout[type];
             if (this._placemark[type].getParent()) {
                 this._placemark[type].options.set({ iconLayout });
             }
         });
     }
 
+    /**
+     * Устанавливает координаты для подписи
+     */
     setCoordinates(coords) {
         if (coords.toString() !== this._placemark.label.geometry.getCoordinates().toString()) {
             ['dot', 'label'].forEach(type => {
@@ -145,6 +159,9 @@ export default class Label {
         }
     }
 
+    /**
+     * Устанавливает видимость для подписи
+     */
     setVisibility(visibleType) {
         Object.keys(this._placemark).forEach(type => {
             const pane = type === visibleType ? 'places' : 'phantom';
@@ -152,6 +169,9 @@ export default class Label {
         });
     }
 
+    /**
+     * Устанавливает стили для подписи
+     */
     setStyles(data) {
         this._placemark.label.options.set({
             iconLabelClassName: data.className,
@@ -160,6 +180,9 @@ export default class Label {
         });
     }
 
+    /**
+     * Центрирует подпись и создает ей правильный iconShape
+     */
     setCenterAndIconShape(type, size, offset) {
         const h = size.height / 2;
         const w = size.width / 2;
