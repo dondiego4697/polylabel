@@ -28,6 +28,13 @@ export default class PolylabelBased {
         }, {});
     }
 
+    getZoomRangeOptions(obj) {
+        return CONFIG.zoomRangeOptions.reduce((result, key) => {
+            result[key] = obj instanceof GeoObject ? obj.options.get(key) : obj.options[key];
+            return result;
+        }, {});
+    }
+
     getProperties(obj) {
         return CONFIG.properties.reduce((result, key) => {
             result[key] = obj instanceof GeoObject ? obj.properties.get(key) : obj.properties[key];

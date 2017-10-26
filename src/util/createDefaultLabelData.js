@@ -6,7 +6,7 @@ const {
 
 export default function () {
     let result = {
-        zoomInfo: {}, // Object with info for every zoom
+        zoomInfo: {}, // Объект с информацией для каждого зума
         autoCenter: [0, 0],
         polygonIndex: 0,
         dotSize: {

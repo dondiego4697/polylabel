@@ -18,8 +18,8 @@ let collectionTest = function () {
                 },
                 labelTextSize: 30,
                 labelTextColor: {
-                    3: 'yellow',
-                    4: 'blue'
+                    '3': 'yellow',
+                    '4': 'blue'
                 }
             });
             mainObjectCollection.each(function (geoObject) {
@@ -84,7 +84,7 @@ let collectionTest = function () {
                 });
             }, 3000);
 
-            /* setTimeout(() => {
+           /*  setTimeout(() => {
                 polyLabeler.destroy();
             }, 2000); */
             setTimeout(() => {
@@ -92,9 +92,9 @@ let collectionTest = function () {
                 go.options.set({ labelLayout: 'new', labelForceVisible: 'label' });
                 mainObjectCollection.add(go);
             }, 3000);
-            /* setTimeout(() => {
+            setTimeout(() => {
                 mainObjectCollection.remove(mainObjectCollection.get(0));
-            }, 5000); */
+            }, 5000);
         });
     });
 }

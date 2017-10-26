@@ -1,4 +1,5 @@
 import calculateArea from 'util.calculateArea';
+import GeoObject from 'GeoObject';
 export default getPolylabelCenter;
 
 function TinyQueue(data, compare) {
@@ -253,7 +254,7 @@ function getPolylabelCenter(polygonCoords, precision, debug) {
     let data;
     if (polygonCoords.length > 1) {
         for (let i = 0; i < polygonCoords.length; i++) {
-            let polygon = new ymaps.GeoObject({
+            let polygon = new GeoObject({
                 geometry: {
                     type: 'Polygon', coordinates: [polygonCoords[i]]
                 }

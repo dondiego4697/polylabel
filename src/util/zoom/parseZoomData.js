@@ -13,8 +13,8 @@ const {MIN_ZOOM, MAX_ZOOM} = CONFIG;
  * return {1: 'value123' ... 19: 'value123'}
 */
 export default function parseZoomData(zoomData) {
-    const valid = ['number', 'string', 'boolean'];
-    if (Object.prototype.toString.call(zoomData) === '[object Object]') {
+    const valid = ['number', 'string', 'boolean', 'object'];
+    if (zoomData && !Array.isArray(zoomData) && typeof zoomData === 'object') {
         return Object.keys(zoomData).reduce((result, key) => {
             if (typeof key === 'string') {
                 parseString(result, key, zoomData[key]);
@@ -50,11 +50,9 @@ function parseString(target, zoom, value) {
 }
 
 function createDefZoomObj(val) {
-    let i = MIN_ZOOM;
     let result = {};
-    while (i <= MAX_ZOOM) {
+    for (let i = MIN_ZOOM; i <= MAX_ZOOM; i++) {
         result[i] = val;
-        i++;
     }
     return result;
 }

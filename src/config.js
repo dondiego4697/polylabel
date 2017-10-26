@@ -4,6 +4,9 @@ export default {
     options: [
         'labelLayout',
         'labelDotLayout',
+        'labelDotVisible'
+    ],
+    zoomRangeOptions: [
         'labelClassName',
         'labelForceVisible',
         'labelTextColor',

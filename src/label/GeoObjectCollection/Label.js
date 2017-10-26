@@ -2,40 +2,43 @@ import Placemark from 'Placemark';
 import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
 import createLabelLayoutTemplate from 'src.label.util.createLabelLayoutTemplate';
 import createDotLayoutTemplate from 'src.label.util.createDotLayoutTemplate';
-import getLabelLayout from 'src.label.util.getLabelLayout';
+import LabelData from 'src.label.LabelData';
+import getLayoutTemplate from 'src.label.util.getLayoutTemplate';
 
 /**
- * Class representing a label
- * @param {GeoObject} polygon
- * @param {Object} options
- * @param {Object} properties
- * @param {GeoObjectCollection} parentCollection
+ * Класс подписи полигона для геоколлекции
  */
-
 export default class Label {
-    constructor(polygon, options, properties, parentCollection, layoutTemplateCache) {
-        if (!polygon || !parentCollection) {
-            throw new Error('wrong argument');
-        }
+    constructor(polygon, parentCollection, layoutTemplateCache) {
         this._polygon = polygon;
         this._parentCollection = parentCollection;
         this._placemark = {
             label: null,
             dot: null
-        }
+        };
         this._layout = {
             label: null,
             dot: null
         };
-        this._init(options, properties, layoutTemplateCache);
+        this._layoutTemplateCache = layoutTemplateCache;
+        this._init();
     }
 
-    getPlacemark() {
-        return this._placemark;
+    setLabelData(options, zoomRangeOptions) {
+        this._data = new LabelData(this._polygon, options, zoomRangeOptions);
+        return this._data;
     }
 
-    getLayout() {
-        return this._layout;
+    getLabelData() {
+        return this._data;
+    }
+
+    getPlacemark(type) {
+        return this._placemark[type];
+    }
+
+    getLayout(type) {
+        return this._layout[type];
     }
 
     removeFromCollection() {
@@ -48,6 +51,11 @@ export default class Label {
             }
             this._parentCollection.remove(this._placemark[type]);
         });
+        this._polygon = null;
+        this._parentCollection = null;
+        this._placemark = null;
+        this._layout = null;
+        this._data = null;
     }
 
     addToCollection() {
@@ -58,47 +66,32 @@ export default class Label {
             if (!this._placemark[type].getParent()) {
                 this._parentCollection.add(this._placemark[type]);
             }
-            return getLabelLayout(this._placemark[type]).then(layout => {
+            return this.getLabelLayout(type).then(layout => {
                 this._layout[type] = layout;
             });
         });
         return Promise.all(layouts);
     }
 
-    _init(options, properties, layoutTemplateCache) {
-        const { labelLayout, labelDotLayout } = this._getLayoutTemplate(options, layoutTemplateCache);
-        this._placemark.label = Label._createPlacemark({
-            properties: {
-                '_labelPolygon': this._polygon
-            },
-            options
-        }, labelLayout);
-
-        this._placemark.dot = Label._createPlacemark({
-            properties: {
-                '_labelPolygon': this._polygon
-            }
-        }, labelDotLayout);
+    getLabelLayout(type) {
+        return this._placemark[type].getOverlay()
+            .then(overlay => overlay.getLayout());
     }
 
-    _getLayoutTemplate(options, layoutTemplateCache) {
-        let createTemplate = {
-            labelLayout: createLabelLayoutTemplate,
-            labelDotLayout: createDotLayoutTemplate
+    _init() {
+        const { labelLayout, labelDotLayout } = getLayoutTemplate(this._polygon.options, this._layoutTemplateCache);
+        const layout = {
+            label: labelLayout,
+            dot: labelDotLayout
         };
-        return ['labelLayout', 'labelDotLayout'].reduce((result, key) => {
-            let layoutTemplate = options[key];
-            let layoutTemplateKey = !layoutTemplate ? `default${key}` : layoutTemplate;
-
-            if (layoutTemplateCache[layoutTemplateKey]) {
-                result[key] = layoutTemplateCache[layoutTemplateKey];
-            } else {
-                const template = createTemplate[key](layoutTemplate);
-                result[key] = template;
-                layoutTemplateCache[layoutTemplateKey] = template;
-            }
-            return result;
-        }, {});
+        ['label', 'dot'].forEach(key => {
+            this._placemark[key] = Label._createPlacemark({
+                properties: Object.assign({}, {
+                    'labelPolygon': this._polygon
+                }, this._polygon.properties),
+                options: this._polygon.options.getAll()
+            }, layout[key]);
+        });
     }
 
     static _createPlacemark(params, layout) {
@@ -110,21 +103,38 @@ export default class Label {
         return new Placemark([0, 0], params.properties, options);
     }
 
+    setDataByZoom(zoom, visibleState) {
+        let { zoomInfo, autoCenter, dotVisible, dotSize } = this._data.getAll();
+        zoomInfo = zoomInfo[zoom];
+        this.setCoordinates(zoomInfo.center || autoCenter);
+        visibleState = visibleState ? visibleState : zoomInfo.visibleForce;
+        let visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
+        if (visibleType === 'dot' && !dotVisible) {
+            visibleType = 'none';
+        }
+        this.setVisibility(visibleType);
+        if (['dot', 'label'].indexOf(visibleType) !== -1) {
+            this.setCenterAndIconShape(visibleType, visibleType === 'dot' ? dotSize : zoomInfo.labelSize, zoomInfo.labelOffset);
+        }
+        this.setStyles(zoomInfo.style);
+        return {
+            visible: zoomInfo.visible,
+            visibleForce: zoomInfo.visibleForce,
+            visibleType
+        }
+    }
+
     setLayoutTemplate(params) {
         const createLayoutTemplate = {
             label: createLabelLayoutTemplate,
             dot: createDotLayoutTemplate
         };
-
-        return Promise.all(Object.keys(params).map((type) => {
+        Object.keys(params).forEach((type) => {
             let iconLayout = createLayoutTemplate[type](params[type]);
             if (this._placemark[type].getParent()) {
                 this._placemark[type].options.set({ iconLayout });
             }
-            /* return getLabelLayout(this._placemark[type]).then(layout => {
-                this._layout[type] = layout;
-            }); */
-        }));
+        });
     }
 
     setCoordinates(coords) {
@@ -150,7 +160,7 @@ export default class Label {
         });
     }
 
-    centerAndSetIconShape(type, size, offset) {
+    setCenterAndIconShape(type, size, offset) {
         const h = size.height / 2;
         const w = size.width / 2;
 

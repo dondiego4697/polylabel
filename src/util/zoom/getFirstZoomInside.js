@@ -6,11 +6,9 @@ export default function (map, center, coords, size, offset, resolvedInaccuracy) 
     let zoom;
     while (i < j) {
         zoom = Math.floor((i + j) / 2);
-        let elemPoints = getElemPoints(map, center, zoom, size, offset || [0, 0], resolvedInaccuracy);
-        /* if (resolvedInaccuracy > 0) {
-            debugger;
-        } */
-        if (checkIsInside(map, coords, elemPoints.normal, zoom) || checkIsInside(map, coords, elemPoints.withInaccuracy, zoom)) {
+        const ri = isNaN(Number(resolvedInaccuracy)) ? 0 : Number(resolvedInaccuracy);
+        let elemPoints = getElemPoints(map, center, zoom, size, offset || [0, 0], ri);
+        if (checkIsInside(map, coords, elemPoints.normal, zoom) || (ri !== 0 && checkIsInside(map, coords, elemPoints.withInaccuracy, zoom))) {
             j = zoom;
         } else {
             i = zoom + 1;
@@ -19,8 +17,7 @@ export default function (map, center, coords, size, offset, resolvedInaccuracy) 
     return i;
 }
 
-function getElemPoints(map, center, zoom, size, offset, resolvedInaccuracy) {
-    const ri = isNaN(Number(resolvedInaccuracy)) ? 0 : Number(resolvedInaccuracy);
+function getElemPoints(map, center, zoom, size, offset, ri) {
     const centerProj = map.options.get('projection').toGlobalPixels(center, zoom);
     let { width: w, height: h } = size;
     h += offset[0];
