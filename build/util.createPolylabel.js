@@ -153,7 +153,6 @@ ymaps.modules.define('src.label.GeoObjectCollection.Label', ['util.extend', 'uti
             var _this4 = this;
 
             var layout = getLayoutTemplate(this._polygon.options.getAll(), this._layoutTemplateCache);
-            debugger;
             _utilObjectKeys(layout).forEach(function (type) {
                 var iconLayout = layout[type];
                 if (_this4._placemark[type].getParent()) {
@@ -418,11 +417,10 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
         };
 
         Label._createPlacemark = function _createPlacemark(id, params, layout) {
-            //TODO должны пробрасоваться properties в placemark!!!!!!!!!!!!
             var options = _utilExtend({}, {
                 iconLayout: layout,
                 iconLabelPosition: 'absolute',
-                //pointOverlay: LabelPlacemarkOverlay,
+                overlay: LabelPlacemarkOverlay,
                 pane: 'phantom'
             }, params.options);
             return {
@@ -452,6 +450,25 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
 
         Label.prototype.setLayout = function setLayout(type, layout) {
             this._layout[type] = layout;
+        };
+
+        Label.prototype.setLayoutTemplate = function setLayoutTemplate() {
+            var _this4 = this;
+
+            var layout = getLayoutTemplate(this._polygon.options, this._layoutTemplateCache);
+            _utilObjectKeys(layout).forEach(function (type) {
+                _this4._updateOptions(_this4._placemark[type].id, {
+                    iconLayout: layout[type]
+                });
+            });
+        };
+
+        Label.prototype.setNewOptions = function setNewOptions(newOptions) {
+            var _this5 = this;
+
+            ['dot', 'label'].forEach(function (type) {
+                _this5._updateOptions(_this5._placemark[type].id, _utilExtend({}, _this5._placemark[type].options, newOptions));
+            });
         };
 
         Label.prototype.setDataByZoom = function setDataByZoom(zoom, visibleState) {
@@ -496,14 +513,14 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
         };
 
         Label.prototype.setCoordinates = function setCoordinates(coords) {
-            var _this4 = this;
+            var _this6 = this;
 
             if (coords.toString() !== this._placemark.label.geometry.coordinates.toString()) {
                 ['dot', 'label'].forEach(function (type) {
-                    _this4._objectManager.remove(_this4._placemark[type]);
-                    _this4._generateNewPlacemark(type);
-                    _this4._placemark[type].geometry.coordinates = coords;
-                    _this4._objectManager.add(_this4._placemark[type]);
+                    _this6._objectManager.remove(_this6._placemark[type]);
+                    _this6._generateNewPlacemark(type);
+                    _this6._placemark[type].geometry.coordinates = coords;
+                    _this6._objectManager.add(_this6._placemark[type]);
                 });
             }
         };
@@ -517,11 +534,11 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
         };
 
         Label.prototype.setVisibility = function setVisibility(visibleType) {
-            var _this5 = this;
+            var _this7 = this;
 
             _utilObjectKeys(this._placemark).forEach(function (type) {
                 var pane = type === visibleType ? 'places' : 'phantom';
-                _this5._updateOptions(_this5._placemark[type].id, { pane: pane });
+                _this7._updateOptions(_this7._placemark[type].id, { pane: pane });
             });
         };
 
@@ -830,7 +847,7 @@ ymaps.modules.define('src.label.util.getLayoutTemplate', ['src.label.util.create
 });
 //# sourceMappingURL=getLayoutTemplate.js.map
 
-ymaps.modules.define('src.label.util.LabelPlacemarkOverlay', ['util.defineClass', 'overlay.Placemark', 'option.Manager'], function (_provide, _utilDefineClass, overlayPlacemark, OptionManager) {
+ymaps.modules.define('src.label.util.LabelPlacemarkOverlay', ['util.defineClass', 'overlay.Placemark', 'option.Manager', 'GeoObject'], function (_provide, _utilDefineClass, overlayPlacemark, OptionManager, GeoObject) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -855,11 +872,9 @@ ymaps.modules.define('src.label.util.LabelPlacemarkOverlay', ['util.defineClass'
         }
 
         LabelPlacemarkOverlay.prototype.getData = function getData() {
-            var polygon = this._data.geoObject.properties.get('labelPolygon');
-            //debugger;
+            var polygon = this._data.geoObject instanceof GeoObject ? this._data.geoObject.properties.get('labelPolygon') : this._data.properties.labelPolygon;
             return {
                 geoObject: polygon,
-                geometry: polygon.geometry,
                 properties: polygon.properties,
                 //options: polygon.options, TODO невозможно переопределить опции, потому что https://github.yandex-team.ru/mapsapi/jsapi-v2/blob/master/src/overlay/view/abstract/baseWithLayout/overlay.view.BaseWithLayout.js#L99
                 state: polygon.state
@@ -1504,15 +1519,18 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
 
             var polygon = this._polygonsObjectManager.objects.getById(event.get('objectId'));
             if (!polygon) return;
-            //TODO эта часть еще не работает как надо
+
             this._calculatePolygonLabelData(polygon, true).then(function (labelInst) {
                 labelInst.setVisibility('phantom');
                 _this9._setInLabelState(polygon, 'label', labelInst);
-                //TODO нужно обновить опции placemark-ов
+
+                labelInst.setLayoutTemplate();
+                labelInst.setNewOptions(polygon.options);
+
                 _this9._getLabelsOverlays(event.get('objectId')).then(function (layouts) {
-                    layouts.forEach(function (l) {
-                        var type = l.getData().id.indexOf('label#') !== -1 ? 'label' : 'dot';
-                        labelInst.setLayout(type, l);
+                    var types = ['dot', 'label'];
+                    layouts.forEach(function (l, i) {
+                        labelInst.setLayout(types[i], l);
                     });
 
                     setZoomVisibility(_this9._map, labelInst).then(function () {
@@ -1525,7 +1543,7 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
         PolylabelObjectManager.prototype._getLabelsOverlays = function _getLabelsOverlays(polygonId) {
             var _this10 = this;
 
-            var overlays = ['dot', 'label', '_dot', '_label'].reduce(function (result, key) {
+            var overlays = ['dot', '_dot', 'label', '_label'].reduce(function (result, key) {
                 var overlay = _this10._labelsObjectManager.objects.overlays.getById(key + '#' + polygonId);
                 var rKey = key[0] === '_' ? key.slice(1) : key;
                 if (overlay) {

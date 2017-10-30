@@ -139,7 +139,6 @@ export default class Label {
      */
     setLayoutTemplate() {
         const layout = getLayoutTemplate(this._polygon.options.getAll(), this._layoutTemplateCache);
-        debugger;
         Object.keys(layout).forEach((type) => {
             let iconLayout = layout[type];
             if (this._placemark[type].getParent()) {

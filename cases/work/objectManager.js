@@ -27,7 +27,7 @@ let objectManagerTest = function () {
 
                 if ([0, 1, 2, 3, 6].includes(i)) {
                     geoObject.options.set({
-                        labelForceVisible: 'label',
+                        // labelForceVisible: 'label',
                         //labelLayout: '<div>{{properties.hintContent}}</div>'
                         labelLayout: '<img src="/for-dev/morty.jpg" width=50px height=50px style="border-radius: 3px;">'
                     });
@@ -56,8 +56,11 @@ let objectManagerTest = function () {
                     });
                 }
                 /* geoObject.options.set({
-                    labelLayout: '<div>123{{geoObject.options.qweq}}</div>',
-                    qweq: i
+                    labelLayout: '<div>123{{options.qweq}}{{properties.zxc}}</div>',
+                    iconQweq: 'q'
+                });
+                geoObject.properties.set({
+                    zxc: 'zzz'
                 }); */
                 objectManager.add(transformGOToJSON(geoObject, i));
                 i++;
@@ -78,29 +81,30 @@ let objectManagerTest = function () {
             });
 
             setTimeout(() => {
+                let polygon = objectManager.objects.getById('polygon0');
                 //1. изменить layout
-                /* let polygon = objectManager.objects.getById('polygon0');
                 polygon.properties.hintContent = 'asd123';
                 objectManager.objects.setObjectOptions(polygon.id, {
-                    labelLayout: '<div>{{options.qwe}}{{properties.asd}}</div>',
-                    labelDotLayout: '<div>1</div>',
+                    labelLayout: '<div>{{options.qweq}}{{properties.hintContent}}</div>',
+                    labelDotLayout: '<div>{{options.dotO}}{{properties.dotP}}</div>',
                     labelTextSize: 80,
+                    iconQweq: 'йопт',
                     labelTextColor: 'pink',
-                    qwe: 'йопт'
-                }); */
+                    iconDotO: 'o'
+                });
                 setTimeout(() => {
                     //2. изменить опции, которые присутствуют в layout
-                    /* mainObjectCollection.get(0).options.set({
-                        qwe: 22
-                    }); */
+                    objectManager.objects.setObjectOptions(polygon.id, {
+                        iconQweq: 22
+                    });
                     //3. изменить опции, которые важны для модуля
-                    /* mainObjectCollection.get(0).options.set({
-                        labelTextSize: 22
-                    }); */
+                    objectManager.objects.setObjectOptions(polygon.id, {
+                        labelTextSize: 22,
+                        iconDotO: '111'
+                    });
                     //4. изменить параметры, которые присутствуют в layout
-                    /* mainObjectCollection.get(0).properties.set({
-                        asd: 'йопт'
-                    }); */
+                    polygon.properties.hintContent = 'opa';
+                    polygon.properties.dotP = 'ddddd';
                 }, 2000);
             }, 3000);
 

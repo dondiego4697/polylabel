@@ -64,11 +64,10 @@ export default class Label {
     }
 
     static _createPlacemark(id, params, layout) {
-        //TODO должны пробрасоваться properties в placemark!!!!!!!!!!!!
         const options = Object.assign({}, {
             iconLayout: layout,
             iconLabelPosition: 'absolute',
-            //pointOverlay: LabelPlacemarkOverlay,
+            overlay: LabelPlacemarkOverlay,
             pane: 'phantom'
         }, params.options);
         return {
@@ -98,6 +97,25 @@ export default class Label {
 
     setLayout(type, layout) {
         this._layout[type] = layout;
+    }
+
+    /**
+     * Устанавливает template для подписи
+     */
+    setLayoutTemplate() {
+        const layout = getLayoutTemplate(this._polygon.options, this._layoutTemplateCache);
+        Object.keys(layout).forEach((type) => {
+            this._updateOptions(this._placemark[type].id, {
+                iconLayout: layout[type]
+            });
+        });
+    }
+
+    setNewOptions(newOptions) {
+        ['dot', 'label'].forEach((type) => {
+            this._updateOptions(this._placemark[type].id,
+                Object.assign({}, this._placemark[type].options, newOptions));
+        });
     }
 
     setDataByZoom(zoom, visibleState) {

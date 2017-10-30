@@ -245,15 +245,18 @@ export default class PolylabelObjectManager extends PBase {
     _onPolygonOptionsChangeHandler(event) {
         const polygon = this._polygonsObjectManager.objects.getById(event.get('objectId'));
         if (!polygon) return;
-        //TODO эта часть еще не работает как надо
+
         this._calculatePolygonLabelData(polygon, true).then((labelInst) => {
             labelInst.setVisibility('phantom');
             this._setInLabelState(polygon, 'label', labelInst);
-            //TODO нужно обновить опции placemark-ов
+
+            labelInst.setLayoutTemplate();
+            labelInst.setNewOptions(polygon.options);
+
             this._getLabelsOverlays(event.get('objectId')).then(layouts => {
-                layouts.forEach(l => {
-                    const type = l.getData().id.indexOf('label#') !== -1 ? 'label' : 'dot';
-                    labelInst.setLayout(type, l);
+                const types = ['dot', 'label'];
+                layouts.forEach((l, i) => {
+                    labelInst.setLayout(types[i], l);
                 });
 
                 setZoomVisibility(this._map, labelInst).then(() => {
@@ -264,7 +267,7 @@ export default class PolylabelObjectManager extends PBase {
     }
 
     _getLabelsOverlays(polygonId) {
-        const overlays = ['dot', 'label', '_dot', '_label'].reduce((result, key) => {
+        const overlays = ['dot', '_dot', 'label', '_label'].reduce((result, key) => {
             let overlay = this._labelsObjectManager.objects.overlays.getById(`${key}#${polygonId}`);
             const rKey = key[0] === '_' ? key.slice(1) : key;
             if (overlay) {
