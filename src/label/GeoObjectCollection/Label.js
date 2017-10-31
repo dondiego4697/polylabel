@@ -7,7 +7,8 @@ import getLayoutTemplate from 'src.label.util.getLayoutTemplate';
  * Класс подписи полигона для геоколлекции
  */
 export default class Label {
-    constructor(polygon, parentCollection, layoutTemplateCache) {
+    constructor(map, polygon, parentCollection, layoutTemplateCache) {
+        this._map = map;
         this._polygon = polygon;
         this._parentCollection = parentCollection;
         this._placemark = {
@@ -28,7 +29,7 @@ export default class Label {
      * @param {Object} zoomRangeOptions - опции для нескольких зумов, необходимые для подписи
      */
     setLabelData(options, zoomRangeOptions) {
-        this._data = new LabelData(this._polygon, options, zoomRangeOptions);
+        this._data = new LabelData(this._polygon, options, zoomRangeOptions, this._map, this);
         return this._data;
     }
 
@@ -90,7 +91,7 @@ export default class Label {
         ['label', 'dot'].forEach(key => {
             this._placemark[key] = Label._createPlacemark({
                 properties: Object.assign({}, {
-                    'labelPolygon': this._polygon
+                    labelPolygon: this._polygon
                 }, this._polygon.properties.getAll()),
                 options: this._polygon.options.getAll()
             }, layout[key]);
@@ -114,7 +115,11 @@ export default class Label {
      * visibleType - текущий тип, который виден
      */
     setDataByZoom(zoom, visibleState) {
-        let { zoomInfo, autoCenter, dotVisible, dotSize } = this._data.getAll();
+        const allData = this._data.getAll();
+        this.setStyles(allData.zoomInfo[zoom].style);
+        this._data.setZoomData(zoom);
+
+        let {zoomInfo, autoCenter, dotVisible, dotSize} = allData;
         zoomInfo = zoomInfo[zoom];
         this.setCoordinates(zoomInfo.center || autoCenter);
         visibleState = visibleState ? visibleState : zoomInfo.visibleForce;
@@ -124,14 +129,17 @@ export default class Label {
         }
         this.setVisibility(visibleType);
         if (['dot', 'label'].indexOf(visibleType) !== -1) {
-            this.setCenterAndIconShape(visibleType, visibleType === 'dot' ? dotSize : zoomInfo.labelSize, zoomInfo.labelOffset);
+            this.setCenterAndIconShape(
+                visibleType,
+                visibleType === 'dot' ? dotSize : zoomInfo.labelSize,
+                zoomInfo.labelOffset
+            );
         }
-        this.setStyles(zoomInfo.style);
         return {
             visible: zoomInfo.visible,
             visibleForce: zoomInfo.visibleForce,
             visibleType
-        }
+        };
     }
 
     /**
@@ -142,7 +150,7 @@ export default class Label {
         Object.keys(layout).forEach((type) => {
             let iconLayout = layout[type];
             if (this._placemark[type].getParent()) {
-                this._placemark[type].options.set({ iconLayout });
+                this._placemark[type].options.set({iconLayout});
             }
         });
     }
@@ -164,7 +172,7 @@ export default class Label {
     setVisibility(visibleType) {
         Object.keys(this._placemark).forEach(type => {
             const pane = type === visibleType ? 'places' : 'phantom';
-            this._placemark[type].options.set({ pane });
+            this._placemark[type].options.set({pane});
         });
     }
 

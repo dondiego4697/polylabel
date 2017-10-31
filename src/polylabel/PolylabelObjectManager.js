@@ -3,11 +3,8 @@ import DataManager from 'data.Manager';
 import Monitor from 'Monitor';
 import ObjectManager from 'ObjectManager';
 import Label from 'src.label.ObjectManager.Label';
-import LabelData from 'src.label.LabelData';
 import nextTick from 'system.nextTick';
-import setZoomVisibility from 'src.util.zoom.setZoomVisibility';
 import EventManager from 'event.Manager';
-
 
 export default class PolylabelObjectManager extends PBase {
     constructor(map, objectManager) {
@@ -87,7 +84,7 @@ export default class PolylabelObjectManager extends PBase {
     _calculatePolygons() {
         this._polygonsObjectManager.objects.each((polygon) => {
             if (polygon.geometry.type === 'Polygon') {
-                this._analyzeAndSetLabelData(polygon, this._getFromLabelState(polygon, 'label'));
+                this._analyzeAndSetLabelData(polygon, ['dot', 'label'], this._getFromLabelState(polygon, 'label'));
             }
         });
     }
@@ -95,11 +92,11 @@ export default class PolylabelObjectManager extends PBase {
     /**
      * Анализирует данные о подписи полигона и устанавливает параметры подписи
      */
-    _analyzeAndSetLabelData(polygon, labelInst, visibleState) {
+    _analyzeAndSetLabelData(polygon, types, labelInst, visibleState) {
         if (!labelInst) {
             return Promise.resolve();
         }
-        const data = labelInst.setDataByZoom(this._map.getZoom(), visibleState);
+        const data = labelInst.setDataByZoom(this._map.getZoom(), types, visibleState);
         this._setCurrentConfiguredVisibility(polygon, data.visible, data.visibleForce);
         this._setCurrentVisibility(polygon, data.visibleType);
 
@@ -123,11 +120,10 @@ export default class PolylabelObjectManager extends PBase {
     _calculatePolygonLabelData(polygon, isLabelInstCreated) {
         const options = this.getOptions(polygon);
         const zoomRangeOptions = this.getZoomRangeOptions(polygon);
-        const properties = this.getProperties(polygon);
 
         const labelInst = (isLabelInstCreated) ?
             this._getFromLabelState(polygon, 'label') :
-            new Label(polygon, this._labelsObjectManager, this._layoutTemplateCache);
+            new Label(this._map, polygon, this._labelsObjectManager, this._layoutTemplateCache);
         labelInst.setLabelData(options, zoomRangeOptions);
 
         return Promise.resolve(labelInst);
@@ -140,7 +136,12 @@ export default class PolylabelObjectManager extends PBase {
         const monitor = new Monitor(this._labelsState.get(polygon));
         this._setInLabelState(polygon, 'labelMonitor', monitor);
         monitor.add('visible', (newValue) => {
-            this._analyzeAndSetLabelData(polygon, this._getFromLabelState(polygon, 'label'), newValue);
+            this._analyzeAndSetLabelData(
+                polygon,
+                ['dot', 'label'],
+                this._getFromLabelState(polygon, 'label'),
+                newValue
+            );
         });
     }
 
@@ -160,12 +161,8 @@ export default class PolylabelObjectManager extends PBase {
                     const polygon = label.properties.labelPolygon;
                     const labelInst = this._getFromLabelState(polygon, 'label');
                     labelInst.setLayout(objectType, layout);
-                    if (this._getFromLabelState(polygon, 'isNeedUpdate')) {
-                        setZoomVisibility(this._map, labelInst).then(() => {
-                            this._setInLabelState(polygon, 'isNeedUpdate', false);
-                            this._analyzeAndSetLabelData(polygon, labelInst);
-                        });
-                    }
+
+                    this._analyzeAndSetLabelData(polygon, [objectType], labelInst);
                 }
             });
         });
@@ -258,10 +255,7 @@ export default class PolylabelObjectManager extends PBase {
                 layouts.forEach((l, i) => {
                     labelInst.setLayout(types[i], l);
                 });
-
-                setZoomVisibility(this._map, labelInst).then(() => {
-                    this._analyzeAndSetLabelData(polygon, labelInst);
-                });
+                this._analyzeAndSetLabelData(polygon, this._getFromLabelState(polygon, 'label'));
             });
         });
     }
@@ -303,7 +297,7 @@ export default class PolylabelObjectManager extends PBase {
                 }
                 return false;
             }
-        }
+        };
         let eventManager = new EventManager({
             controllers: [controller]
         });

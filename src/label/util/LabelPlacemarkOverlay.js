@@ -1,5 +1,4 @@
 import overlayPlacemark from 'overlay.Placemark';
-import OptionManager from 'option.Manager';
 import GeoObject from 'GeoObject';
 
 /**
@@ -19,6 +18,6 @@ export default class LabelPlacemarkOverlay extends overlayPlacemark {
             properties: polygon.properties,
             //options: polygon.options, TODO невозможно переопределить опции, потому что https://github.yandex-team.ru/mapsapi/jsapi-v2/blob/master/src/overlay/view/abstract/baseWithLayout/overlay.view.BaseWithLayout.js#L99
             state: polygon.state
-        }
+        };
     }
 }

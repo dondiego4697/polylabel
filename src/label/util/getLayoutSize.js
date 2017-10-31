@@ -3,6 +3,6 @@ export default function (layout) {
     if (!el) {
         return;
     }
-    const { width, height } = el.children[0].getBoundingClientRect();
-    return { width, height };
+    const {width, height} = el.children[0].getBoundingClientRect();
+    return {width, height};
 }

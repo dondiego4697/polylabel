@@ -2,7 +2,7 @@ let collectionTest = function () {
     ymaps.ready(['util.createPolylabel']).then(function () {
         let myMap = createMap();
         ymaps.regions.load('001', {
-            lang: 'en',
+            lang: 'ru',
             quality: 2
         }).then(function (result) {
             let mainObjectCollection = result.geoObjects;
@@ -30,7 +30,7 @@ let collectionTest = function () {
                         });
                     } */
                     geoObject.options.set({
-                        labelForceVisible: 'label',
+                        //labelForceVisible: 'label',
                         labelLayout: '<img src="/for-dev/morty.jpg" width=50px height=50px style="border-radius: 3px;">'
                     });
                     geoObject.options.set({
@@ -74,11 +74,17 @@ let collectionTest = function () {
 
             setTimeout(() => {
                 //1. изменить layout
+                mainObjectCollection.get(0).properties.set({
+                    asd: 'che',
+                    dotP: 'd'
+                });
                 mainObjectCollection.get(0).options.set({
                     labelLayout: '<div>{{geoObject.options.qwe}}{{properties.asd}}</div>',
+                    labelDotLayout: '<div>{{geoObject.options.dotO}}{{properties.dotP}}</div>',
                     labelTextSize: 80,
                     labelTextColor: 'pink',
-                    qwe: 'йопт'
+                    qwe: 'йопт',
+                    dotO: 'q'
                 });
                 setTimeout(() => {
                     //2. изменить опции, которые присутствуют в layout
@@ -96,7 +102,7 @@ let collectionTest = function () {
                 }, 2000);
             }, 3000);
 
-            /*  setTimeout(() => {
+            /* setTimeout(() => {
                  polyLabeler.destroy();
              }, 2000); */
             /* setTimeout(() => {

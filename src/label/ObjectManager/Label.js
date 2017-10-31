@@ -1,4 +1,3 @@
-import Placemark from 'Placemark';
 import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
 import LabelData from 'src.label.LabelData';
 import getLayoutTemplate from 'src.label.util.getLayoutTemplate';
@@ -7,7 +6,8 @@ import getLayoutTemplate from 'src.label.util.getLayoutTemplate';
  * Класс подписи полигона для ObjectManager
  */
 export default class Label {
-    constructor(polygon, objectManager, layoutTemplateCache) {
+    constructor(map, polygon, objectManager, layoutTemplateCache) {
+        this._map = map;
         this._polygon = polygon;
         this._objectManager = objectManager;
         this._placemark = {
@@ -56,7 +56,7 @@ export default class Label {
         ['label', 'dot'].forEach(key => {
             this._placemark[key] = Label._createPlacemark(`${key}#${this._polygon.id}`, {
                 properties: Object.assign({}, {
-                    'labelPolygon': this._polygon
+                    labelPolygon: this._polygon
                 }, this._polygon.properties),
                 options: this._polygon.options
             }, layout[key]);
@@ -79,7 +79,7 @@ export default class Label {
                 type: 'Point',
                 coordinates: [0, 0]
             }
-        }
+        };
     }
 
     _updateOptions(id, options) {
@@ -87,7 +87,7 @@ export default class Label {
     }
 
     setLabelData(options, zoomRangeOptions) {
-        this._data = new LabelData(this._polygon, options, zoomRangeOptions);
+        this._data = new LabelData(this._polygon, options, zoomRangeOptions, this._map, this);
         return this._data;
     }
 
@@ -118,28 +118,36 @@ export default class Label {
         });
     }
 
-    setDataByZoom(zoom, visibleState) {
-        let { zoomInfo, autoCenter, dotVisible, dotSize } = this._data.getAll();
-        zoomInfo = zoomInfo[zoom];
-        this.setCoordinates(zoomInfo.center || autoCenter);
-        visibleState = visibleState ? visibleState : zoomInfo.visibleForce;
-        let visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
-        if (visibleType === 'dot' && !dotVisible) {
-            visibleType = 'none';
-        }
-        this.setVisibility(visibleType);
+    setDataByZoom(zoom, types, visibleState) {
+        const allData = this._data.getAll();
+        let result = {};
 
-        if (['dot', 'label'].indexOf(visibleType) !== -1) {
-            this.setCenterAndIconShape(visibleType,
-                visibleType === 'dot' ? dotSize : zoomInfo.labelSize,
-                zoomInfo.labelOffset);
-        }
-        this.setStyles(zoomInfo.style);
-        return {
-            visible: zoomInfo.visible,
-            visibleForce: zoomInfo.visibleForce,
-            visibleType
-        }
+        types.forEach(type => {
+            if (type === 'label') {
+                this.setStyles(allData.zoomInfo[zoom].style);
+            }
+            this._data.setZoomDataForType(type, zoom);
+            let {zoomInfo, autoCenter, dotVisible, dotSize} = this._data.getAll();
+            zoomInfo = zoomInfo[zoom];
+            this.setCoordinates(zoomInfo.center || autoCenter);
+            visibleState = visibleState ? visibleState : zoomInfo.visibleForce;
+            let visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
+            if (visibleType === 'dot' && !dotVisible) {
+                visibleType = 'none';
+            }
+            this.setVisibility(visibleType);
+            if (['dot', 'label'].indexOf(visibleType) !== -1) {
+                this.setCenterAndIconShape(visibleType,
+                    visibleType === 'dot' ? dotSize : zoomInfo.labelSize,
+                    zoomInfo.labelOffset);
+            }
+            result = {
+                visible: zoomInfo.visible,
+                visibleForce: zoomInfo.visibleForce,
+                visibleType
+            };
+        });
+        return result;
     }
 
     setCenterAndIconShape(type, size, offset) {
@@ -181,7 +189,7 @@ export default class Label {
     setVisibility(visibleType) {
         Object.keys(this._placemark).forEach(type => {
             const pane = type === visibleType ? 'places' : 'phantom';
-            this._updateOptions(this._placemark[type].id, { pane });
+            this._updateOptions(this._placemark[type].id, {pane});
         });
     }
 
