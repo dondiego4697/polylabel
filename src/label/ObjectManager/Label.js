@@ -1,12 +1,13 @@
 import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
 import LabelData from 'src.label.LabelData';
-import getLayoutTemplate from 'src.label.util.getLayoutTemplate';
+import getBaseLayoutTemplates from 'src.label.util.layoutTemplates.getBaseLayoutTemplates';
+import createLayoutTemplates from 'src.label.util.layoutTemplates.createLayoutTemplates';
 
 /**
  * Класс подписи полигона для ObjectManager
  */
 export default class Label {
-    constructor(map, polygon, objectManager, layoutTemplateCache) {
+    constructor(map, polygon, objectManager) {
         this._map = map;
         this._polygon = polygon;
         this._objectManager = objectManager;
@@ -18,7 +19,6 @@ export default class Label {
             label: null,
             dot: null
         };
-        this._layoutTemplateCache = layoutTemplateCache;
         this._init();
     }
 
@@ -52,14 +52,18 @@ export default class Label {
     }
 
     _init() {
-        const layout = getLayoutTemplate(this._polygon.options, this._layoutTemplateCache);
+        const baseLayouts = getBaseLayoutTemplates();
+        const layouts = createLayoutTemplates(
+            this._polygon.options.labelLayout,
+            this._polygon.options.labelDotLayout
+        );
         ['label', 'dot'].forEach(key => {
             this._placemark[key] = Label._createPlacemark(`${key}#${this._polygon.id}`, {
                 properties: Object.assign({}, {
                     labelPolygon: this._polygon
                 }, this._polygon.properties),
-                options: this._polygon.options
-            }, layout[key]);
+                options: Object.assign({}, this._polygon.options, layouts[key])
+            }, baseLayouts[key]);
         });
     }
 
@@ -103,11 +107,13 @@ export default class Label {
      * Устанавливает template для подписи
      */
     setLayoutTemplate() {
-        const layout = getLayoutTemplate(this._polygon.options, this._layoutTemplateCache);
-        Object.keys(layout).forEach((type) => {
-            this._updateOptions(this._placemark[type].id, {
-                iconLayout: layout[type]
-            });
+        const layouts = createLayoutTemplates(
+            this._polygon.options.labelLayout,
+            this._polygon.options.labelDotLayout
+        );
+        
+        Object.keys(layouts).forEach(key => {
+            this._updateOptions(this._placemark[key].id, layouts[key]);
         });
     }
 
@@ -135,18 +141,21 @@ export default class Label {
             if (visibleType === 'dot' && !dotVisible) {
                 visibleType = 'none';
             }
-            this.setVisibility(visibleType);
-            if (['dot', 'label'].indexOf(visibleType) !== -1) {
-                this.setCenterAndIconShape(visibleType,
-                    visibleType === 'dot' ? dotSize : zoomInfo.labelSize,
-                    zoomInfo.labelOffset);
-            }
             result = {
                 visible: zoomInfo.visible,
                 visibleForce: zoomInfo.visibleForce,
-                visibleType
+                visibleType,
+                dotSize,
+                zoomInfo
             };
         });
+
+        this.setVisibility(result.visibleType);
+        if (['dot', 'label'].indexOf(result.visibleType) !== -1) {
+            this.setCenterAndIconShape(result.visibleType,
+                result.visibleType === 'dot' ? result.dotSize : result.zoomInfo.labelSize,
+                result.zoomInfo.labelOffset);
+        }
         return result;
     }
 

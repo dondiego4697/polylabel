@@ -7,16 +7,16 @@ import nextTick from 'system.nextTick';
 import EventManager from 'event.Manager';
 
 export default class PolylabelObjectManager extends PBase {
-    constructor(map, objectManager) {
+    constructor(map, objectManager, callbackResult) {
         super(map);
+        this._callbackResult = callbackResult;    
+    
         this._map = map;
         this._polygonsObjectManager = objectManager;
         this._labelsObjectManager = new ObjectManager();
         this._labelsState = new WeakMap();
         this._currentConfiguredVisibility = new WeakMap();
         this._currentVisibility = new WeakMap();
-        this._layoutTemplateCache = {};
-
         this._initData();
     }
 
@@ -25,7 +25,6 @@ export default class PolylabelObjectManager extends PBase {
         this._deletePolygonsListeners();
         this._deletePolygonCollectionListeners();
         this._deleteLabelCollection();
-        this._layoutTemplateCache = null;
     }
 
     /**
@@ -58,6 +57,7 @@ export default class PolylabelObjectManager extends PBase {
         this._initPolygonCollectionListeners();
         this._initPolygonsListeners();
         this._initLabelCollectionListeners();
+
     }
 
     /**
@@ -94,13 +94,16 @@ export default class PolylabelObjectManager extends PBase {
      */
     _analyzeAndSetLabelData(polygon, types, labelInst, visibleState) {
         if (!labelInst) {
-            return Promise.resolve();
+            return;
         }
-        const data = labelInst.setDataByZoom(this._map.getZoom(), types, visibleState);
-        this._setCurrentConfiguredVisibility(polygon, data.visible, data.visibleForce);
-        this._setCurrentVisibility(polygon, data.visibleType);
 
-        return Promise.resolve();
+        nextTick(() => { // TODO подозрительно так делать (при зуме расчет подписей начинается раньше чем layout примет вид под новый зум :(
+            // в 2 раза больше размер layout на момент расчета
+            // if (polygon.properties.hintContent === 'Greenland') debugger;
+            const data = labelInst.setDataByZoom(this._map.getZoom(), types, visibleState);
+            this._setCurrentConfiguredVisibility(polygon, data.visible, data.visibleForce);
+            this._setCurrentVisibility(polygon, data.visibleType);
+        });
     }
 
     _setCurrentConfiguredVisibility(polygon, visible, visibleForce) {
@@ -123,7 +126,7 @@ export default class PolylabelObjectManager extends PBase {
 
         const labelInst = (isLabelInstCreated) ?
             this._getFromLabelState(polygon, 'label') :
-            new Label(this._map, polygon, this._labelsObjectManager, this._layoutTemplateCache);
+            new Label(this._map, polygon, this._labelsObjectManager);
         labelInst.setLabelData(options, zoomRangeOptions);
 
         return Promise.resolve(labelInst);
@@ -154,6 +157,7 @@ export default class PolylabelObjectManager extends PBase {
         const objectType = objectId.indexOf('label#') !== -1 ? 'label' : 'dot';
 
         let overlay = event.get('overlay');
+
         nextTick(() => {
             overlay.getLayout().then(layout => {
                 const label = this._labelsObjectManager.objects.getById(objectId);
@@ -236,7 +240,9 @@ export default class PolylabelObjectManager extends PBase {
     _initPolygonsListeners() {
         this._polygonsObjectManager.objects.events.add(
             ['optionschange', 'objectoptionschange'],
-            this._onPolygonOptionsChangeHandler, this);
+            this._onPolygonOptionsChangeHandler,
+            this
+        );
     }
 
     _onPolygonOptionsChangeHandler(event) {

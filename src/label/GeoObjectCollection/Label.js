@@ -1,13 +1,14 @@
 import Placemark from 'Placemark';
 import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
 import LabelData from 'src.label.LabelData';
-import getLayoutTemplate from 'src.label.util.getLayoutTemplate';
+import getBaseLayoutTemplates from 'src.label.util.layoutTemplates.getBaseLayoutTemplates';
+import createLayoutTemplates from 'src.label.util.layoutTemplates.createLayoutTemplates';
 
 /**
  * Класс подписи полигона для геоколлекции
  */
 export default class Label {
-    constructor(map, polygon, parentCollection, layoutTemplateCache) {
+    constructor(map, polygon, parentCollection) {
         this._map = map;
         this._polygon = polygon;
         this._parentCollection = parentCollection;
@@ -19,7 +20,6 @@ export default class Label {
             label: null,
             dot: null
         };
-        this._layoutTemplateCache = layoutTemplateCache;
         this._init();
     }
 
@@ -87,14 +87,18 @@ export default class Label {
     }
 
     _init() {
-        const layout = getLayoutTemplate(this._polygon.options.getAll(), this._layoutTemplateCache);
+        const baseLayouts = getBaseLayoutTemplates();
+        const layouts = createLayoutTemplates(
+            this._polygon.options.get('labelLayout'),
+            this._polygon.options.get('labelDotLayout')
+        );
         ['label', 'dot'].forEach(key => {
             this._placemark[key] = Label._createPlacemark({
                 properties: Object.assign({}, {
                     labelPolygon: this._polygon
                 }, this._polygon.properties.getAll()),
-                options: this._polygon.options.getAll()
-            }, layout[key]);
+                options: Object.assign({}, this._polygon.options.getAll(), layouts[key])
+            }, baseLayouts[key]);
         });
     }
 
@@ -116,18 +120,22 @@ export default class Label {
      */
     setDataByZoom(zoom, visibleState) {
         const allData = this._data.getAll();
+
         this.setStyles(allData.zoomInfo[zoom].style);
         this._data.setZoomData(zoom);
 
         let {zoomInfo, autoCenter, dotVisible, dotSize} = allData;
         zoomInfo = zoomInfo[zoom];
+
         this.setCoordinates(zoomInfo.center || autoCenter);
+
         visibleState = visibleState ? visibleState : zoomInfo.visibleForce;
         let visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
         if (visibleType === 'dot' && !dotVisible) {
             visibleType = 'none';
         }
         this.setVisibility(visibleType);
+
         if (['dot', 'label'].indexOf(visibleType) !== -1) {
             this.setCenterAndIconShape(
                 visibleType,
@@ -146,12 +154,13 @@ export default class Label {
      * Устанавливает template для подписи
      */
     setLayoutTemplate() {
-        const layout = getLayoutTemplate(this._polygon.options.getAll(), this._layoutTemplateCache);
-        Object.keys(layout).forEach((type) => {
-            let iconLayout = layout[type];
-            if (this._placemark[type].getParent()) {
-                this._placemark[type].options.set({iconLayout});
-            }
+        const layouts = createLayoutTemplates(
+            this._polygon.options.get('labelLayout'),
+            this._polygon.options.get('labelDotLayout')
+        );
+        
+        Object.keys(layouts).forEach(key => {
+            this._placemark[key].options.set(layouts[key]);
         });
     }
 

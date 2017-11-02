@@ -72,8 +72,9 @@ export default class LabelData {
 
     setZoomDataForType(type, zoom) {
         if (this._data.zoomInfo[zoom].isCalculated !== 2) {
-            setOneZoomVisibility(this._map, zoom, this._labelInst, type);
-            this._data.zoomInfo[zoom].isCalculated++;
+            if (setOneZoomVisibility(this._map, zoom, this._labelInst, type)) {
+                this._data.zoomInfo[zoom].isCalculated++;                
+            }
         }
     }
 

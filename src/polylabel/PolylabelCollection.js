@@ -8,15 +8,16 @@ import EventManager from 'event.Manager';
 import Event from 'Event';
 
 export default class PolylabelCollection extends PBase {
-    constructor(map, polygonsCollection) {
+    constructor(map, polygonsCollection, callbackResult) {
         super(map);
+        this._callbackResult = callbackResult;
+        
         this._map = map;
         this._labelsCollection = new GeoObjectCollection();
         this._labelsState = new WeakMap();
         this._polygonsCollection = polygonsCollection;
         this._currentConfiguredVisibility = new WeakMap();
         this._currentVisibility = new WeakMap();
-        this._layoutTemplateCache = {};
         this._isPolygonParentChange = new WeakMap();
         this._initData();
     }
@@ -120,11 +121,10 @@ export default class PolylabelCollection extends PBase {
 
         const labelInst = (isLabelInstCreated) ?
             this._getFromLabelState(polygon, 'label') :
-            new Label(this._map, polygon, this._labelsCollection, this._layoutTemplateCache);
+            new Label(this._map, polygon, this._labelsCollection);
         labelInst.setLabelData(options, zoomRangeOptions);
 
-        return labelInst.addToCollection()
-            .then(() => labelInst);
+        return labelInst.addToCollection().then(() => labelInst);
     }
 
     /**
@@ -139,7 +139,6 @@ export default class PolylabelCollection extends PBase {
             this._setCurrentConfiguredVisibility(polygon, data.visible, data.visibleForce);
             this._setCurrentVisibility(polygon, data.visibleType);
         });
-
         return Promise.resolve();
     }
 
