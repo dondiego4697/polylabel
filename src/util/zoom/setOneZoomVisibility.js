@@ -8,7 +8,6 @@ const functions = {
 
 export default function (map, zoom, labelInst, labelType) {
     // if (labelInst._polygon.properties.hintContent === 'Greenland') debugger;
-    
     const labelData = labelInst.getLabelData();
     let coordinates = labelData.getPolygonCoords();
 
@@ -62,8 +61,14 @@ function analyseLabel(map, zoom, labelInst, labelDataInst, coordinates, layout) 
     const labelData = labelDataInst.getAll();
     const zoomInfo = labelData.zoomInfo[zoom];
     labelDataInst.setZoomInfo(zoom, 'labelSize', size);
-    const firstZoom = getFirstZoomInside(map, zoomInfo.center || labelData.autoCenter,
-        coordinates, size, zoomInfo.labelOffset, zoomInfo.permissibleInaccuracyOfVisibility);
+    const firstZoom = getFirstZoomInside(
+        map,
+        zoomInfo.center || labelData.autoCenter,
+        coordinates,
+        size,
+        zoomInfo.labelOffset,
+        zoomInfo.permissibleInaccuracyOfVisibility
+    );
     labelDataInst.setZoomInfo(zoom, 'visible', getVisible(zoomInfo.visible, 'label', zoom >= firstZoom));
     return true;
 }
