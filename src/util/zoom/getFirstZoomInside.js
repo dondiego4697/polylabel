@@ -21,8 +21,10 @@ export default function (map, center, coords, size, offset, resolvedInaccuracy) 
 function getElemPoints(map, center, zoom, size, offset, ri) {
     const centerProj = map.options.get('projection').toGlobalPixels(center, zoom);
     let {width: w, height: h} = size;
-    h += offset[0];
-    w += offset[1];
+ 
+    centerProj[0] += offset[0];
+    centerProj[1] += offset[1];
+
     let elemPoints = [];
     let elemPointsWithInaccuracy = [];
     elemPoints.push(

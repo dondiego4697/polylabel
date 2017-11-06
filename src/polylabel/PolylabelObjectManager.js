@@ -98,13 +98,13 @@ export default class PolylabelObjectManager extends PBase {
             return;
         }
 
-        //nextTick(() => { // geometrychange нужна TODO подозрительно так делать (при зуме расчет подписей начинается раньше чем layout примет вид под новый зум :(
-            // в 2 раза больше размер layout на момент расчета
-            // if (polygon.properties.hintContent === 'Greenland') debugger;
+        nextTick(() => {
             const data = labelInst.setDataByZoom(this._map.getZoom(), types, visibleState);
+            if (!data) return;
+            
             this._setCurrentConfiguredVisibility(polygon, data.visible, data.visibleForce);
             this._setCurrentVisibility(polygon, data.visibleType);
-        //});
+        });
     }
 
     _setCurrentConfiguredVisibility(polygon, visible, visibleForce) {
@@ -165,17 +165,15 @@ export default class PolylabelObjectManager extends PBase {
     }
 
     _getLayoutAndAnalyze(overlay, labelId, labelType) {
-        nextTick(() => {  // добавлен nextTick, тк не всегда успевает измениться геометрия на _labelsOverlaysEventHandler      
-            overlay.getLayout().then(layout => {
-                const label = this._labelsObjectManager.objects.getById(labelId);
-                if (label) {
-                    const polygon = label.properties.labelPolygon;
-                    const labelInst = this._getFromLabelState(polygon, 'label');
-                    labelInst.setLayout(labelType, layout);
+        overlay.getLayout().then(layout => {
+            const label = this._labelsObjectManager.objects.getById(labelId);
+            if (label) {
+                const polygon = label.properties.labelPolygon;
+                const labelInst = this._getFromLabelState(polygon, 'label');
+                labelInst.setLayout(labelType, layout);
 
-                    this._analyzeAndSetLabelData(polygon, [labelType], labelInst);
-                }
-            });
+                this._analyzeAndSetLabelData(polygon, [labelType], labelInst);
+            }
         });
     }
 
@@ -186,10 +184,14 @@ export default class PolylabelObjectManager extends PBase {
 
         switch (event.get('type')) {
             case 'add': {
-                //при создании overlay вешаем на него слушатель geometrychange
+                //при создании overlay вешаем на него слушатель geometrychange, чтобы можно было анализировать
+                //layout подписи, после того как она приняла размеры под зум
                 // как только геометрия поменялась, начинаем анализ 
+
                 overlay.events.add('geometrychange', this._labelOverlaysGeometryChangeHandler, this);
-                this._getLayoutAndAnalyze(overlay, labelId, labelType);
+                nextTick(() => {
+                    this._getLayoutAndAnalyze(overlay, labelId, labelType);
+                });
                 break;
             }
             case 'remove': {
@@ -275,8 +277,8 @@ export default class PolylabelObjectManager extends PBase {
     _onPolygonOptionsChangeHandler(event) {
         const polygon = this._polygonsObjectManager.objects.getById(event.get('objectId'));
         if (!polygon) return;
-
-        this._calculatePolygonLabelData(polygon, true).then((labelInst) => {
+        
+        this._calculatePolygonLabelData(polygon, true).then((labelInst) => {            
             labelInst.setVisibility('phantom');
             this._setInLabelState(polygon, 'label', labelInst);
 
@@ -288,7 +290,8 @@ export default class PolylabelObjectManager extends PBase {
                 layouts.forEach((l, i) => {
                     labelInst.setLayout(types[i], l);
                 });
-                this._analyzeAndSetLabelData(polygon, this._getFromLabelState(polygon, 'label'));
+                
+                this._analyzeAndSetLabelData(polygon, types, this._getFromLabelState(polygon, 'label'));
             });
         });
     }
@@ -315,7 +318,7 @@ export default class PolylabelObjectManager extends PBase {
             onBeforeEventFiring: (events, type, event) => {
                 const labelId = event.get('objectId');
                 if (!labelId) return false;
-                // debugger;
+
                 let polygonId = labelId.split('#')[1];
                 polygonId = isNaN(Number(polygonId)) ? polygonId : Number(polygonId)
                 let polygon = this._polygonsObjectManager.objects.getById(polygonId);

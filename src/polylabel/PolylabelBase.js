@@ -17,7 +17,7 @@ export default class PolylabelBased {
 
     _mapBoundsChangeHandler(event) {
         if (event.get('newZoom') !== event.get('oldZoom')) {
-            this._mapBoundsChangeCallback();
+            this._mapBoundsChangeCallback(event.get('newZoom'));
         }
     }
 

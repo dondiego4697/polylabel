@@ -124,10 +124,14 @@ export default class Label {
         });
     }
 
+    /**
+     * Устанавливает данные подписи на указанный зум и возвращает
+     * объект с текущими рассчитанными данными
+     */
     setDataByZoom(zoom, types, visibleState) {
         const allData = this._data.getAll();
         let result = {};
-
+        
         types.forEach(type => {
             if (type === 'label') {
                 this.setStyles(allData.zoomInfo[zoom].style);
@@ -136,6 +140,7 @@ export default class Label {
             let {zoomInfo, autoCenter, dotVisible, dotSize} = this._data.getAll();
             zoomInfo = zoomInfo[zoom];
             this.setCoordinates(zoomInfo.center || autoCenter);
+
             visibleState = visibleState ? visibleState : zoomInfo.visibleForce;
             let visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
             if (visibleType === 'dot' && !dotVisible) {
@@ -167,15 +172,19 @@ export default class Label {
             iconShape: {
                 type: 'Rectangle',
                 coordinates: [
-                    [-w + offset[1], -h + offset[0]],
-                    [w + offset[1], h + offset[0]]
+                    [-w + offset[0], -h + offset[1]],
+                    [w + offset[0], h + offset[1]]
                 ]
             },
-            iconLabelTop: -h + offset[0],
-            iconLabelLeft: -w + offset[1]
+            iconLabelLeft: -w + offset[0],
+            iconLabelTop: -h + offset[1]
         });
     }
 
+    /**
+     * Устанавливаем координаты
+     * Возвращает true - если меняются координаты
+     */
     setCoordinates(coords) {
         if (coords.toString() !== this._placemark.label.geometry.coordinates.toString()) {
             ['dot', 'label'].forEach(type => {
@@ -184,7 +193,9 @@ export default class Label {
                 this._placemark[type].geometry.coordinates = coords;
                 this._objectManager.add(this._placemark[type]);
             });
+            return true;
         }
+        return false;
     }
 
     setStyles(data) {

@@ -207,12 +207,12 @@ export default class Label {
             iconShape: {
                 type: 'Rectangle',
                 coordinates: [
-                    [-w + offset[1], -h + offset[0]],
-                    [w + offset[1], h + offset[0]]
+                    [-w + offset[0], -h + offset[1]],
+                    [w + offset[0], h + offset[1]]
                 ]
             },
-            iconLabelTop: -h + offset[0],
-            iconLabelLeft: -w + offset[1]
+            iconLabelLeft: -w + offset[0],
+            iconLabelTop: -h + offset[1]
         });
     }
 
