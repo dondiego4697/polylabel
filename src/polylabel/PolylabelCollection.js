@@ -8,10 +8,9 @@ import EventManager from 'event.Manager';
 import Event from 'Event';
 
 export default class PolylabelCollection extends PBase {
-    constructor(map, polygonsCollection, callbackResult) {
+    constructor(map, polygonsCollection) {
         super(map);
-        this._callbackResult = callbackResult;
-        
+                
         this._map = map;
         this._labelsCollection = new GeoObjectCollection();
         this._labelsState = new WeakMap();

@@ -1,5 +1,5 @@
 import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
-import LabelData from 'src.label.LabelData';
+import LabelData from 'src.label.ObjectManager.LabelData';
 import getBaseLayoutTemplates from 'src.label.util.layoutTemplates.getBaseLayoutTemplates';
 import createLayoutTemplates from 'src.label.util.layoutTemplates.createLayoutTemplates';
 
@@ -19,6 +19,8 @@ export default class Label {
             label: null,
             dot: null
         };
+        this._baseLayoutTemplates = null;
+        this.layoutTemplates = null;
         this._init();
     }
 
@@ -52,22 +54,25 @@ export default class Label {
     }
 
     _init() {
-        const baseLayouts = getBaseLayoutTemplates();
-        const layouts = createLayoutTemplates(
+        this._baseLayoutTemplates = getBaseLayoutTemplates();
+        this._layoutTemplates = createLayoutTemplates(
             this._polygon.options.labelLayout,
             this._polygon.options.labelDotLayout
         );
-        ['label', 'dot'].forEach(key => {
-            this._placemark[key] = Label._createPlacemark(`${key}#${this._polygon.id}`, {
+    }
+
+    createPlacemarks() {
+        ['label', 'dot'].forEach(type => {
+            this._placemark[type] = Label._createPlacemark(`${type}#${this._polygon.id}`, {
                 properties: Object.assign({}, {
-                    labelPolygon: this._polygon
+                    polygon: this._polygon
                 }, this._polygon.properties),
-                options: Object.assign({}, this._polygon.options, layouts[key])
-            }, baseLayouts[key]);
+                options: Object.assign({}, this._polygon.options, this._layoutTemplates[type])
+            }, this._baseLayoutTemplates[type], this._data.getCenterCoords(this._map.getZoom()));
         });
     }
 
-    static _createPlacemark(id, params, layout) {
+    static _createPlacemark(id, params, layout, coordinates) {
         const options = Object.assign({}, {
             iconLayout: layout,
             iconLabelPosition: 'absolute',
@@ -81,7 +86,7 @@ export default class Label {
             properties: params.properties,
             geometry: {
                 type: 'Point',
-                coordinates: [0, 0]
+                coordinates
             }
         };
     }
@@ -90,7 +95,7 @@ export default class Label {
         this._objectManager.objects.setObjectOptions(id, options);
     }
 
-    setLabelData(options, zoomRangeOptions) {
+    createLabelData(options, zoomRangeOptions) {
         this._data = new LabelData(this._polygon, options, zoomRangeOptions, this._map, this);
         return this._data;
     }
@@ -103,9 +108,6 @@ export default class Label {
         this._layout[type] = layout;
     }
 
-    /**
-     * Устанавливает template для подписи
-     */
     setLayoutTemplate() {
         const layouts = createLayoutTemplates(
             this._polygon.options.labelLayout,
@@ -119,49 +121,53 @@ export default class Label {
 
     setNewOptions(newOptions) {
         ['dot', 'label'].forEach((type) => {
-            this._updateOptions(this._placemark[type].id,
-                Object.assign({}, this._placemark[type].options, newOptions));
+            Object.assign(this._placemark[type].options, newOptions);      
+            this._updateOptions(
+                this._placemark[type].id,
+                this._placemark[type].options
+            );
         });
     }
 
-    /**
-     * Устанавливает данные подписи на указанный зум и возвращает
-     * объект с текущими рассчитанными данными
-     */
+    setLabelData(options, zoomRangeOptions) {
+        this._data = new LabelData(this._polygon, options, zoomRangeOptions, this._map, this);
+        return this._data;
+    }
+
     setDataByZoom(zoom, types, visibleState) {
-        const allData = this._data.getAll();
         let result = {};
-        
         types.forEach(type => {
             if (type === 'label') {
-                this.setStyles(allData.zoomInfo[zoom].style);
+                const styles = this._data.getStyles(zoom);
+                this.setStyles({
+                    className: styles.className,
+                    textSize: styles.textSize,
+                    textColor: styles.textColor
+                });
             }
-            this._data.setZoomDataForType(type, zoom);
-            let {zoomInfo, autoCenter, dotVisible, dotSize} = this._data.getAll();
-            zoomInfo = zoomInfo[zoom];
-            this.setCoordinates(zoomInfo.center || autoCenter);
-
-            visibleState = visibleState ? visibleState : zoomInfo.visibleForce;
-            let visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
-            if (visibleType === 'dot' && !dotVisible) {
-                visibleType = 'none';
-            }
-            result = {
-                visible: zoomInfo.visible,
-                visibleForce: zoomInfo.visibleForce,
-                visibleType,
-                dotSize,
-                zoomInfo
-            };
+            this._data.setVisible(zoom, type, this._layout[type]);
         });
 
-        this.setVisibility(result.visibleType);
-        if (['dot', 'label'].indexOf(result.visibleType) !== -1) {
-            this.setCenterAndIconShape(result.visibleType,
-                result.visibleType === 'dot' ? result.dotSize : result.zoomInfo.labelSize,
-                result.zoomInfo.labelOffset);
+        const currentVisibleType = this.setVisibility(
+            visibleState,
+            this._data.getVisibility(zoom),
+            this._data.getData('dotVisible')
+        );
+
+        if (['label', 'dot'].indexOf(currentVisibleType) !== -1 &&
+            this._data.getSize(zoom, currentVisibleType)) {
+            this.setCoordinates(this._data.getCenterCoords(zoom));
+            this.setCenterAndIconShape(
+                currentVisibleType,
+                this._data.getSize(zoom, currentVisibleType),
+                this._data.getOffset(zoom)
+            );
         }
-        return result;
+
+        return {
+            currentVisibleType,
+            currentConfiguredVisibileType: this._data.getVisibility(zoom)
+        }
     }
 
     setCenterAndIconShape(type, size, offset) {
@@ -181,10 +187,6 @@ export default class Label {
         });
     }
 
-    /**
-     * Устанавливаем координаты
-     * Возвращает true - если меняются координаты
-     */
     setCoordinates(coords) {
         if (coords.toString() !== this._placemark.label.geometry.coordinates.toString()) {
             ['dot', 'label'].forEach(type => {
@@ -193,9 +195,7 @@ export default class Label {
                 this._placemark[type].geometry.coordinates = coords;
                 this._objectManager.add(this._placemark[type]);
             });
-            return true;
         }
-        return false;
     }
 
     setStyles(data) {
@@ -206,11 +206,30 @@ export default class Label {
         });
     }
 
-    setVisibility(visibleType) {
+    setVisibilityForce(visibleType) {
         Object.keys(this._placemark).forEach(type => {
             const pane = type === visibleType ? 'places' : 'phantom';
-            this._updateOptions(this._placemark[type].id, {pane});
+            const label = this._objectManager.objects.getById(this._placemark[type].id);
+            if (label && label.options.pane !== pane) {
+                this._updateOptions(this._placemark[type].id, {pane});
+            }
         });
+    }
+
+    setVisibility(visibleState, visible, dotVisible) {
+        let currState = visibleState && visibleState !== 'auto' ? visibleState : visible;
+        if (currState === 'dot' && !dotVisible) {
+            currState = 'none';
+        }
+
+        Object.keys(this._placemark).forEach(type => {
+            const pane = type === currState ? 'places' : 'phantom';
+            const label = this._objectManager.objects.getById(this._placemark[type].id);
+            if (label && label.options.pane !== pane) {
+                this._updateOptions(this._placemark[type].id, {pane});
+            }
+        });
+        return currState;
     }
 
     _generateNewPlacemark(type) {

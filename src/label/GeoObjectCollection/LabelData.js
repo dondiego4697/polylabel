@@ -22,7 +22,6 @@ export default class LabelData {
                 height: 0,
                 width: 0
             },
-            dotFirstZoom: undefined,
             dotVisible: typeof options.labelDotVisible !== 'boolean' ? true : options.labelDotVisible
         };
         this._parsedOptions = this._parseOptions(zoomRangeOptions);
@@ -48,15 +47,15 @@ export default class LabelData {
         return this._data.zoomInfo;
     }
 
-    getAll() {
-        return this._data;
-    }
-
     getPolygonCoords() {
         const geometry = this._polygon.geometry;
         return this._polygon instanceof GeoObject ?
             geometry.getCoordinates()[this._data.polygonIndex] :
             geometry.coordinates[this._data.polygonIndex];
+    }
+
+    getAll() {
+        return this._data;
     }
 
     /**

@@ -8,8 +8,8 @@ import ObjectManager from 'ObjectManager';
  * @param {GeoObjectCollection} data.labelsCollection
  * @param {GeoObjectCollection} data.polygonsCollection
  */
-export default function (map, data, callback) {
+export default function (map, data) {
     return data instanceof ObjectManager ?
-        new PObjectManager(map, data, callback) :
-        new PCollection(map, data, callback);
+        new PObjectManager(map, data) :
+        new PCollection(map, data);
 }

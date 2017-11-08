@@ -1,7 +1,7 @@
 ymaps.modules.define('src.config', [], function (_provide) {
     _provide({
         MIN_ZOOM: 0,
-        MAX_ZOOM: 19,
+        MAX_ZOOM: 23,
         options: ['labelLayout', 'labelDotLayout', 'labelDotVisible'],
         zoomRangeOptions: ['labelClassName', 'labelForceVisible', 'labelTextColor', 'labelTextSize', 'labelCenterCoords', 'labelOffset', 'labelPermissibleInaccuracyOfVisibility'],
         properties: []
@@ -9,7 +9,7 @@ ymaps.modules.define('src.config', [], function (_provide) {
 });
 //# sourceMappingURL=config.js.map
 
-ymaps.modules.define('src.label.GeoObjectCollection.Label', ['util.extend', 'util.objectKeys', 'Placemark', 'src.label.util.LabelPlacemarkOverlay', 'src.label.LabelData', 'src.label.util.layoutTemplates.getBaseLayoutTemplates', 'src.label.util.layoutTemplates.createLayoutTemplates'], function (_provide, _utilExtend, _utilObjectKeys, Placemark, LabelPlacemarkOverlay, LabelData, getBaseLayoutTemplates, createLayoutTemplates) {
+ymaps.modules.define('src.label.GeoObjectCollection.Label', ['util.extend', 'util.objectKeys', 'Placemark', 'src.label.util.LabelPlacemarkOverlay', 'src.label.GeoObjectCollection.LabelData', 'src.label.util.layoutTemplates.getBaseLayoutTemplates', 'src.label.util.layoutTemplates.createLayoutTemplates'], function (_provide, _utilExtend, _utilObjectKeys, Placemark, LabelPlacemarkOverlay, LabelData, getBaseLayoutTemplates, createLayoutTemplates) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -218,6 +218,156 @@ ymaps.modules.define('src.label.GeoObjectCollection.Label', ['util.extend', 'uti
 });
 //# sourceMappingURL=Label.js.map
 
+ymaps.modules.define('src.label.GeoObjectCollection.LabelData', ['util.objectKeys', 'src.config', 'src.util.zoom.parseZoomData', 'src.util.getPolesOfInaccessibility', 'GeoObject', 'src.util.zoom.setOneZoomVisibility'], function (_provide, _utilObjectKeys, CONFIG, parseZoomData, getPolylabelCenter, GeoObject, setOneZoomVisibility) {
+    function _classCallCheck(instance, Constructor) {
+        if (!(instance instanceof Constructor)) {
+            throw new TypeError("Cannot call a class as a function");
+        }
+    }
+
+    var MIN_ZOOM = CONFIG.MIN_ZOOM,
+        MAX_ZOOM = CONFIG.MAX_ZOOM;
+
+    var LabelData = function () {
+        function LabelData(polygon, options, zoomRangeOptions, map, labelInst) {
+            _classCallCheck(this, LabelData);
+
+            this._map = map;
+            this._labelInst = labelInst;
+            this._polygon = polygon;
+            this._data = {
+                zoomInfo: {}, // Объект с информацией для каждого зума
+                autoCenter: [0, 0],
+                polygonIndex: 0,
+                dotSize: {
+                    height: 0,
+                    width: 0
+                },
+                dotVisible: typeof options.labelDotVisible !== 'boolean' ? true : options.labelDotVisible
+            };
+            this._parsedOptions = this._parseOptions(zoomRangeOptions);
+            this._init();
+        }
+
+        LabelData.prototype.setData = function setData(key, val) {
+            this._data[key] = val;
+        };
+
+        LabelData.prototype.getData = function getData(key) {
+            return this._data[key];
+        };
+
+        LabelData.prototype.setZoomInfo = function setZoomInfo(zoom, key, value) {
+            this._data.zoomInfo[zoom][key] = value;
+        };
+
+        LabelData.prototype.getZoomInfo = function getZoomInfo(zoom) {
+            if (zoom || typeof zoom === 'number' && zoom === 0) {
+                return this._data.zoomInfo[zoom];
+            }
+            return this._data.zoomInfo;
+        };
+
+        LabelData.prototype.getPolygonCoords = function getPolygonCoords() {
+            var geometry = this._polygon.geometry;
+            return this._polygon instanceof GeoObject ? geometry.getCoordinates()[this._data.polygonIndex] : geometry.coordinates[this._data.polygonIndex];
+        };
+
+        LabelData.prototype.getAll = function getAll() {
+            return this._data;
+        };
+
+        LabelData.prototype.setZoomData = function setZoomData(zoom) {
+            if (this._data.zoomInfo[zoom].isCalculated !== 2) {
+                setOneZoomVisibility(this._map, zoom, this._labelInst, 'dot');
+                setOneZoomVisibility(this._map, zoom, this._labelInst, 'label');
+                this._data.zoomInfo[zoom].isCalculated = 2;
+            }
+        };
+
+        LabelData.prototype.setZoomDataForType = function setZoomDataForType(type, zoom) {
+            if (this._data.zoomInfo[zoom].isCalculated !== 2) {
+                if (setOneZoomVisibility(this._map, zoom, this._labelInst, type)) {
+                    this._data.zoomInfo[zoom].isCalculated++;
+                }
+            }
+        };
+
+        LabelData.prototype._init = function _init() {
+            var geometry = this._polygon.geometry;
+            var coordinates = this._polygon instanceof GeoObject ? geometry.getCoordinates() : geometry.coordinates;
+            var autoCenterData = getPolylabelCenter(coordinates, 1.0);
+            this._data.autoCenter = autoCenterData.center;
+            this._data.polygonIndex = autoCenterData.index;
+
+            for (var z = MIN_ZOOM; z <= MAX_ZOOM; z++) {
+                this._data.zoomInfo[z] = this._fillZoom(z);
+            }
+        };
+
+        LabelData.prototype._fillZoom = function _fillZoom(zoom) {
+            var zoomInfo = this._createDefaultZoomInfo();
+            this._setData(zoomInfo, 'visibleForce', this._parsedOptions.labelForceVisible, zoom);
+
+            this._setData(zoomInfo, 'center', this._parsedOptions.labelCenterCoords, zoom);
+            this._setData(zoomInfo, 'labelOffset', this._parsedOptions.labelOffset, zoom);
+            this._setData(zoomInfo, 'permissibleInaccuracyOfVisibility', this._parsedOptions.labelPermissibleInaccuracyOfVisibility, zoom);
+
+            this._setData(zoomInfo, 'style.className', this._parsedOptions.labelClassName, zoom);
+            this._setData(zoomInfo, 'style.textSize', this._parsedOptions.labelTextSize, zoom);
+            this._setData(zoomInfo, 'style.textColor', this._parsedOptions.labelTextColor, zoom);
+            return zoomInfo;
+        };
+
+        LabelData.prototype._setData = function _setData(target, key, data, zoom) {
+            var path = key.split('.');
+            if (data && data[zoom]) {
+                set(path, target);
+            }
+            function set(path, target) {
+                if (path.length > 1) {
+                    set(path.slice(1), target[path[0]]);
+                } else {
+                    target[path[0]] = data[zoom];
+                }
+            }
+        };
+
+        LabelData.prototype._parseOptions = function _parseOptions(options) {
+            var result = {};
+            _utilObjectKeys(options).forEach(function (key) {
+                result[key] = parseZoomData(options[key]);
+            });
+            return result;
+        };
+
+        LabelData.prototype._createDefaultZoomInfo = function _createDefaultZoomInfo() {
+            return {
+                isCalculated: 0,
+                visible: 'none', // label | dot | none
+                visibleForce: 'auto', // label | dot | none | auto
+                center: undefined,
+                style: {
+                    className: undefined,
+                    textSize: undefined,
+                    textColor: undefined
+                },
+                labelSize: {
+                    height: 0,
+                    width: 0
+                },
+                labelOffset: [0, 0],
+                permissibleInaccuracyOfVisibility: 0
+            };
+        };
+
+        return LabelData;
+    }();
+
+    _provide(LabelData);
+});
+//# sourceMappingURL=LabelData.js.map
+
 ymaps.modules.define('src.label.LabelData', ['util.objectKeys', 'src.config', 'src.util.zoom.parseZoomData', 'src.util.getPolesOfInaccessibility', 'GeoObject', 'src.util.zoom.setOneZoomVisibility'], function (_provide, _utilObjectKeys, CONFIG, parseZoomData, getPolylabelCenter, GeoObject, setOneZoomVisibility) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
@@ -369,7 +519,7 @@ ymaps.modules.define('src.label.LabelData', ['util.objectKeys', 'src.config', 's
 });
 //# sourceMappingURL=LabelData.js.map
 
-ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.objectKeys', 'src.label.util.LabelPlacemarkOverlay', 'src.label.LabelData', 'src.label.util.layoutTemplates.getBaseLayoutTemplates', 'src.label.util.layoutTemplates.createLayoutTemplates'], function (_provide, _utilExtend, _utilObjectKeys, LabelPlacemarkOverlay, LabelData, getBaseLayoutTemplates, createLayoutTemplates) {
+ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.objectKeys', 'src.label.util.LabelPlacemarkOverlay', 'src.label.ObjectManager.LabelData', 'src.label.util.layoutTemplates.getBaseLayoutTemplates', 'src.label.util.layoutTemplates.createLayoutTemplates'], function (_provide, _utilExtend, _utilObjectKeys, LabelPlacemarkOverlay, LabelData, getBaseLayoutTemplates, createLayoutTemplates) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -391,6 +541,8 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
                 label: null,
                 dot: null
             };
+            this._baseLayoutTemplates = null;
+            this.layoutTemplates = null;
             this._init();
         }
 
@@ -428,21 +580,24 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
         };
 
         Label.prototype._init = function _init() {
+            this._baseLayoutTemplates = getBaseLayoutTemplates();
+            this._layoutTemplates = createLayoutTemplates(this._polygon.options.labelLayout, this._polygon.options.labelDotLayout);
+        };
+
+        Label.prototype.createPlacemarks = function createPlacemarks() {
             var _this3 = this;
 
-            var baseLayouts = getBaseLayoutTemplates();
-            var layouts = createLayoutTemplates(this._polygon.options.labelLayout, this._polygon.options.labelDotLayout);
-            ['label', 'dot'].forEach(function (key) {
-                _this3._placemark[key] = Label._createPlacemark(key + '#' + _this3._polygon.id, {
+            ['label', 'dot'].forEach(function (type) {
+                _this3._placemark[type] = Label._createPlacemark(type + '#' + _this3._polygon.id, {
                     properties: _utilExtend({}, {
-                        labelPolygon: _this3._polygon
+                        polygon: _this3._polygon
                     }, _this3._polygon.properties),
-                    options: _utilExtend({}, _this3._polygon.options, layouts[key])
-                }, baseLayouts[key]);
+                    options: _utilExtend({}, _this3._polygon.options, _this3._layoutTemplates[type])
+                }, _this3._baseLayoutTemplates[type], _this3._data.getCenterCoords(_this3._map.getZoom()));
             });
         };
 
-        Label._createPlacemark = function _createPlacemark(id, params, layout) {
+        Label._createPlacemark = function _createPlacemark(id, params, layout, coordinates) {
             var options = _utilExtend({}, {
                 iconLayout: layout,
                 iconLabelPosition: 'absolute',
@@ -456,7 +611,7 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
                 properties: params.properties,
                 geometry: {
                     type: 'Point',
-                    coordinates: [0, 0]
+                    coordinates: coordinates
                 }
             };
         };
@@ -465,7 +620,7 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
             this._objectManager.objects.setObjectOptions(id, options);
         };
 
-        Label.prototype.setLabelData = function setLabelData(options, zoomRangeOptions) {
+        Label.prototype.createLabelData = function createLabelData(options, zoomRangeOptions) {
             this._data = new LabelData(this._polygon, options, zoomRangeOptions, this._map, this);
             return this._data;
         };
@@ -492,50 +647,43 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
             var _this5 = this;
 
             ['dot', 'label'].forEach(function (type) {
-                _this5._updateOptions(_this5._placemark[type].id, _utilExtend({}, _this5._placemark[type].options, newOptions));
+                _utilExtend(_this5._placemark[type].options, newOptions);
+                _this5._updateOptions(_this5._placemark[type].id, _this5._placemark[type].options);
             });
+        };
+
+        Label.prototype.setLabelData = function setLabelData(options, zoomRangeOptions) {
+            this._data = new LabelData(this._polygon, options, zoomRangeOptions, this._map, this);
+            return this._data;
         };
 
         Label.prototype.setDataByZoom = function setDataByZoom(zoom, types, visibleState) {
             var _this6 = this;
 
-            var allData = this._data.getAll();
             var result = {};
-
             types.forEach(function (type) {
                 if (type === 'label') {
-                    _this6.setStyles(allData.zoomInfo[zoom].style);
+                    var styles = _this6._data.getStyles(zoom);
+                    _this6.setStyles({
+                        className: styles.className,
+                        textSize: styles.textSize,
+                        textColor: styles.textColor
+                    });
                 }
-                _this6._data.setZoomDataForType(type, zoom);
-
-                var _data$getAll = _this6._data.getAll(),
-                    zoomInfo = _data$getAll.zoomInfo,
-                    autoCenter = _data$getAll.autoCenter,
-                    dotVisible = _data$getAll.dotVisible,
-                    dotSize = _data$getAll.dotSize;
-
-                zoomInfo = zoomInfo[zoom];
-                _this6.setCoordinates(zoomInfo.center || autoCenter);
-
-                visibleState = visibleState ? visibleState : zoomInfo.visibleForce;
-                var visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
-                if (visibleType === 'dot' && !dotVisible) {
-                    visibleType = 'none';
-                }
-                result = {
-                    visible: zoomInfo.visible,
-                    visibleForce: zoomInfo.visibleForce,
-                    visibleType: visibleType,
-                    dotSize: dotSize,
-                    zoomInfo: zoomInfo
-                };
+                _this6._data.setVisible(zoom, type, _this6._layout[type]);
             });
 
-            this.setVisibility(result.visibleType);
-            if (['dot', 'label'].indexOf(result.visibleType) !== -1) {
-                this.setCenterAndIconShape(result.visibleType, result.visibleType === 'dot' ? result.dotSize : result.zoomInfo.labelSize, result.zoomInfo.labelOffset);
+            var currentVisibleType = this.setVisibility(visibleState, this._data.getVisibility(zoom), this._data.getData('dotVisible'));
+
+            if (['label', 'dot'].indexOf(currentVisibleType) !== -1 && this._data.getSize(zoom, currentVisibleType)) {
+                this.setCoordinates(this._data.getCenterCoords(zoom));
+                this.setCenterAndIconShape(currentVisibleType, this._data.getSize(zoom, currentVisibleType), this._data.getOffset(zoom));
             }
-            return result;
+
+            return {
+                currentVisibleType: currentVisibleType,
+                currentConfiguredVisibileType: this._data.getVisibility(zoom)
+            };
         };
 
         Label.prototype.setCenterAndIconShape = function setCenterAndIconShape(type, size, offset) {
@@ -562,9 +710,7 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
                     _this7._placemark[type].geometry.coordinates = coords;
                     _this7._objectManager.add(_this7._placemark[type]);
                 });
-                return true;
             }
-            return false;
         };
 
         Label.prototype.setStyles = function setStyles(data) {
@@ -575,13 +721,34 @@ ymaps.modules.define('src.label.ObjectManager.Label', ['util.extend', 'util.obje
             });
         };
 
-        Label.prototype.setVisibility = function setVisibility(visibleType) {
+        Label.prototype.setVisibilityForce = function setVisibilityForce(visibleType) {
             var _this8 = this;
 
             _utilObjectKeys(this._placemark).forEach(function (type) {
                 var pane = type === visibleType ? 'places' : 'phantom';
-                _this8._updateOptions(_this8._placemark[type].id, { pane: pane });
+                var label = _this8._objectManager.objects.getById(_this8._placemark[type].id);
+                if (label && label.options.pane !== pane) {
+                    _this8._updateOptions(_this8._placemark[type].id, { pane: pane });
+                }
             });
+        };
+
+        Label.prototype.setVisibility = function setVisibility(visibleState, visible, dotVisible) {
+            var _this9 = this;
+
+            var currState = visibleState && visibleState !== 'auto' ? visibleState : visible;
+            if (currState === 'dot' && !dotVisible) {
+                currState = 'none';
+            }
+
+            _utilObjectKeys(this._placemark).forEach(function (type) {
+                var pane = type === currState ? 'places' : 'phantom';
+                var label = _this9._objectManager.objects.getById(_this9._placemark[type].id);
+                if (label && label.options.pane !== pane) {
+                    _this9._updateOptions(_this9._placemark[type].id, { pane: pane });
+                }
+            });
+            return currState;
         };
 
         Label.prototype._generateNewPlacemark = function _generateNewPlacemark(type) {
@@ -814,6 +981,179 @@ ymaps.modules.define('src.label.ObjectManager.Label1', ['util.extend', 'util.obj
 });
 //# sourceMappingURL=Label1.js.map
 
+ymaps.modules.define('src.label.ObjectManager.LabelData', ['util.objectKeys', 'src.config', 'src.util.zoom.parseZoomData', 'src.util.getPolesOfInaccessibility', 'src.util.zoom.setZoomVisibility'], function (_provide, _utilObjectKeys, CONFIG, parseZoomData, getPolylabelCenter, setZoomVisibility) {
+    function _classCallCheck(instance, Constructor) {
+        if (!(instance instanceof Constructor)) {
+            throw new TypeError("Cannot call a class as a function");
+        }
+    }
+
+    var MIN_ZOOM = CONFIG.MIN_ZOOM,
+        MAX_ZOOM = CONFIG.MAX_ZOOM;
+
+    var LabelData = function () {
+        function LabelData(polygon, options, zoomRangeOptions, map, label) {
+            _classCallCheck(this, LabelData);
+
+            this._map = map;
+            this._label = label;
+            this._polygon = polygon;
+            this._data = {
+                zoomInfo: {}, // Объект с информацией для каждого зума
+                autoCenter: [0, 0],
+                polygonIndex: 0,
+                dotVisible: typeof options.labelDotVisible !== 'boolean' ? true : options.labelDotVisible
+            };
+            this.parsedOptions = this._parseOptions(zoomRangeOptions);
+            this._init();
+        }
+
+        LabelData.prototype.setData = function setData(key, val) {
+            this._data[key] = val;
+        };
+
+        LabelData.prototype.getData = function getData(key) {
+            return this._data[key];
+        };
+
+        LabelData.prototype.setZoomInfo = function setZoomInfo(zoom, key, value) {
+            this._data.zoomInfo[zoom][key] = value;
+        };
+
+        LabelData.prototype.getZoomInfo = function getZoomInfo(zoom) {
+            if (zoom || typeof zoom === 'number' && zoom === 0) {
+                return this._data.zoomInfo[zoom];
+            }
+            return this._data.zoomInfo;
+        };
+
+        LabelData.prototype.getPolygonCoords = function getPolygonCoords() {
+            return this._polygon.geometry.coordinates[this._data.polygonIndex];
+        };
+
+        LabelData.prototype.getCenterCoords = function getCenterCoords(zoom) {
+            return this.parsedOptions.labelCenterCoords && this.parsedOptions.labelCenterCoords[zoom] || this._data.autoCenter;
+        };
+
+        LabelData.prototype.getStyles = function getStyles(zoom) {
+            return {
+                className: this.parsedOptions.labelClassName && this.parsedOptions.labelClassName[zoom],
+                textSize: this.parsedOptions.labelTextSize && this.parsedOptions.labelTextSize[zoom],
+                textColor: this.parsedOptions.labelTextColor && this.parsedOptions.labelTextColor[zoom]
+            };
+        };
+
+        LabelData.prototype.getVisibility = function getVisibility(zoom) {
+            return this.parsedOptions.labelForceVisible && this.parsedOptions.labelForceVisible[zoom] || this._data.zoomInfo[zoom].visible;
+        };
+
+        LabelData.prototype.getOffset = function getOffset(zoom) {
+            return this.parsedOptions.labelOffset && this.parsedOptions.labelOffset[zoom] || [0, 0];
+        };
+
+        LabelData.prototype.getPermissibleInaccuracyOfVisibility = function getPermissibleInaccuracyOfVisibility(zoom) {
+            return this.parsedOptions.labelPermissibleInaccuracyOfVisibility && this.parsedOptions.labelPermissibleInaccuracyOfVisibility[zoom] || 0;
+        };
+
+        LabelData.prototype.getSize = function getSize(zoom, type) {
+            return this._data.zoomInfo[zoom][type + 'Size'];
+        };
+
+        LabelData.prototype.setVisible = function setVisible(zoom, type, layout) {
+            if (this._data.zoomInfo[zoom][type + 'Size']) return;
+
+            var zoomData = setZoomVisibility(type, this._map, zoom, this._data.zoomInfo[zoom].visible, layout, this.getCenterCoords(zoom), this.getPolygonCoords(), this.getOffset(zoom), this.getPermissibleInaccuracyOfVisibility(zoom));
+            if (!zoomData) return;
+
+            this._data.zoomInfo[zoom].visible = zoomData.visible;
+            this._data.zoomInfo[zoom][type + 'Size'] = zoomData.size;
+        };
+
+        LabelData.prototype._init = function _init() {
+            var autoCenterData = getPolylabelCenter(this._polygon.geometry.coordinates, 1.0);
+            this._data.autoCenter = autoCenterData.center;
+            this._data.polygonIndex = autoCenterData.index;
+
+            for (var z = MIN_ZOOM; z <= MAX_ZOOM; z++) {
+                this._data.zoomInfo[z] = this._fillZoom(z);
+            }
+        };
+
+        LabelData.prototype._fillZoom = function _fillZoom(zoom) {
+            return this._createDefaultZoomInfo();
+        };
+
+        LabelData.prototype._parseOptions = function _parseOptions(options) {
+            var result = {};
+            _utilObjectKeys(options).forEach(function (key) {
+                result[key] = parseZoomData(options[key]);
+            });
+            return result;
+        };
+
+        LabelData.prototype._createDefaultZoomInfo = function _createDefaultZoomInfo() {
+            return {
+                visible: 'none', // label | dot | none,
+                dotSize: undefined,
+                labelSize: undefined
+            };
+        };
+
+        return LabelData;
+    }();
+
+    _provide(LabelData);
+});
+//# sourceMappingURL=LabelData.js.map
+
+ymaps.modules.define('src.label.ObjectManager.setZoomVisibility', ['src.util.zoom.getFirstZoomInside', 'src.label.util.getLayoutSize'], function (_provide, getFirstZoomInside, getLayoutSize) {
+
+    var functions = {
+        label: analyseLabel,
+        dot: analyseDot
+    };
+
+    //labelType, map, zoom, currVisible, layout, center, polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility
+
+    _provide(function (labelType, map, zoom, currVisible, layout, center, polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility) {
+        return functions[labelType](map, zoom, currVisible, layout, center, polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility);
+    });
+
+    function getVisible(currentType, newType, newIsVisible) {
+        var types = ['none', 'dot', 'label'];
+        var result = currentType;
+        if (newIsVisible) {
+            result = types.indexOf(newType) > types.indexOf(currentType) ? newType : currentType;
+        }
+        return result;
+    }
+
+    function analyseDot(map, zoom, currVisible, layout, center, polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility) {
+        var size = getLayoutSize(layout);
+        if (!size) return;
+
+        var firstZoomInside = getFirstZoomInside(map, center, polygonCoordinates, size, labelOffset, permissibleInaccuracyOfVisibility);
+
+        return {
+            visible: getVisible(currVisible, 'dot', zoom >= firstZoomInside),
+            dotSize: size
+        };
+    }
+
+    function analyseLabel(map, zoom, currVisible, layout, center, polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility) {
+        var size = getLayoutSize(layout);
+        if (!size) return;
+
+        var firstZoomInside = getFirstZoomInside(map, center, polygonCoordinates, size, labelOffset, permissibleInaccuracyOfVisibility);
+
+        return {
+            visible: getVisible(currVisible, 'label', zoom >= firstZoomInside),
+            labelSize: size
+        };
+    }
+});
+//# sourceMappingURL=setZoomVisibility.js.map
+
 ymaps.modules.define('src.label.util.createDotLayoutTemplate', ['templateLayoutFactory'], function (_provide, templateLayoutFactory) {
     var defaultDotTemplate = '<div {% style %}background-color: red;\n    width: 10px; height: 10px; border-radius: 50px;{% endstyle %}></div>';
 
@@ -853,6 +1193,7 @@ ymaps.modules.define("src.label.util.getLayoutSize", [], function (_provide) {
 
         while (width === 0 && height === 0) {
             el = el.children[0];
+            if (!el) break;
             var rect = el.getBoundingClientRect();
             width = rect.width;
             height = rect.height;
@@ -897,7 +1238,8 @@ ymaps.modules.define('src.label.util.LabelPlacemarkOverlay', ['util.defineClass'
         }
 
         LabelPlacemarkOverlay.prototype.getData = function getData() {
-            var polygon = this._data.geoObject instanceof GeoObject ? this._data.geoObject.properties.get('labelPolygon') : this._data.properties.labelPolygon;
+            var polygon = this._data.geoObject instanceof GeoObject ? this._data.geoObject.properties.get('labelPolygon') : this._data.properties.polygon;
+
             return {
                 geoObject: polygon,
                 properties: polygon.properties,
@@ -1002,16 +1344,26 @@ ymaps.modules.define('src.polylabel.PolylabelBase', ['src.config', 'GeoObject'],
 
         PolylabelBased.prototype.initMapListeners = function initMapListeners(callback) {
             this._mapBoundsChangeCallback = callback;
-            this._map.events.add('boundschange', this._mapBoundsChangeHandler, this);
+            this._map.events.add(['boundschange', 'dblclick'], this._mapEventsHandler, this);
         };
 
         PolylabelBased.prototype.destroyMapListeners = function destroyMapListeners() {
-            this._map.events.remove('boundschange', this._mapBoundsChangeHandler, this);
+            this._map.events.remove(['boundschange', 'dblclick'], this._mapEventsHandler, this);
         };
 
-        PolylabelBased.prototype._mapBoundsChangeHandler = function _mapBoundsChangeHandler(event) {
-            if (event.get('newZoom') !== event.get('oldZoom')) {
-                this._mapBoundsChangeCallback(event.get('newZoom'));
+        PolylabelBased.prototype._mapEventsHandler = function _mapEventsHandler(event) {
+            switch (event.get('type')) {
+                case 'boundschange':
+                    {
+                        if (event.get('newZoom') !== event.get('oldZoom')) {
+                            this._mapBoundsChangeCallback('boundschange');
+                        }
+                        break;
+                    }
+                case 'dblclick':
+                    {
+                        this._mapBoundsChangeCallback('dblclick');
+                    }
             }
         };
 
@@ -1061,12 +1413,10 @@ ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', '
     var PolylabelCollection = function (_PBase) {
         _utilDefineClass(PolylabelCollection, _PBase);
 
-        function PolylabelCollection(map, polygonsCollection, callbackResult) {
+        function PolylabelCollection(map, polygonsCollection) {
             _classCallCheck(this, PolylabelCollection);
 
             var _this = _possibleConstructorReturn(this, _PBase.call(this, map));
-
-            _this._callbackResult = callbackResult;
 
             _this._map = map;
             _this._labelsCollection = new GeoObjectCollection();
@@ -1377,7 +1727,7 @@ ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', '
 });
 //# sourceMappingURL=PolylabelCollection.js.map
 
-ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass', 'util.objectKeys', 'src.polylabel.PolylabelBase', 'data.Manager', 'Monitor', 'ObjectManager', 'src.label.ObjectManager.Label', 'system.nextTick', 'event.Manager'], function (_provide, _utilDefineClass, _utilObjectKeys, PBase, DataManager, Monitor, ObjectManager, Label, nextTick, EventManager) {
+ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass', 'src.polylabel.PolylabelBase', 'data.Manager', 'Monitor', 'ObjectManager', 'src.label.ObjectManager.Label', 'system.nextTick', 'event.Manager'], function (_provide, _utilDefineClass, PBase, DataManager, Monitor, ObjectManager, Label, nextTick, EventManager) {
     function _classCallCheck(instance, Constructor) {
         if (!(instance instanceof Constructor)) {
             throw new TypeError("Cannot call a class as a function");
@@ -1395,12 +1745,10 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
     var PolylabelObjectManager = function (_PBase) {
         _utilDefineClass(PolylabelObjectManager, _PBase);
 
-        function PolylabelObjectManager(map, objectManager, callbackResult) {
+        function PolylabelObjectManager(map, objectManager) {
             _classCallCheck(this, PolylabelObjectManager);
 
             var _this = _possibleConstructorReturn(this, _PBase.call(this, map));
-
-            _this._callbackResult = callbackResult;
 
             _this._map = map;
             _this._polygonsObjectManager = objectManager;
@@ -1408,16 +1756,16 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
             _this._labelsState = new WeakMap();
             _this._currentConfiguredVisibility = new WeakMap();
             _this._currentVisibility = new WeakMap();
-            _this._initData();
+            _this._init();
             return _this;
         }
 
         PolylabelObjectManager.prototype.destroy = function destroy() {
-            this._deleteLabelsOverlaysListener();
+            this._deleteLabelsOverlaysListeners();
             this._deleteLabelStateListeners();
             this._deletePolygonsListeners();
-            this._deletePolygonCollectionListeners();
-            this._deleteLabelCollection();
+            this._deletePolygonsObjectsListeners();
+            this._deleteLabelsOMListeners();
         };
 
         PolylabelObjectManager.prototype.getLabelState = function getLabelState(polygon) {
@@ -1432,90 +1780,83 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
             return this._currentVisibility.get(polygon);
         };
 
-        PolylabelObjectManager.prototype._initData = function _initData() {
+        PolylabelObjectManager.prototype._init = function _init() {
             this._map.geoObjects.add(this._labelsObjectManager);
-            this._initLabelsOverlaysListener();
-            this._firstCalculatePolygons();
-
-            this._initMapListeners();
-            this._initPolygonCollectionListeners();
+            this._initLabelsOverlaysListeners();
+            this._initPolygonsObjectsListeners();
             this._initPolygonsListeners();
-            this._initLabelCollectionListeners();
+            this._initLabelsOMListeners();
+
+            this._firstCalculatePolygons();
+            this._initMapListeners();
         };
 
         PolylabelObjectManager.prototype._firstCalculatePolygons = function _firstCalculatePolygons() {
+            this._calculatePolygons(function (label) {
+                label.createPlacemarks();
+                label.addToObjectManager();
+            });
+        };
+
+        PolylabelObjectManager.prototype._calculatePolygons = function _calculatePolygons(callback) {
             var _this2 = this;
 
-            this._clearLabels();
-            this._polygonsObjectManager.objects.each(function (polygon) {
-                if (polygon.geometry.type === 'Polygon') {
-                    _this2._setInLabelState(polygon, 'visible', undefined);
-                    _this2._setInLabelState(polygon, 'isNeedUpdate', true);
-                    _this2._initLabelStateListener(polygon);
-                    _this2._calculatePolygonLabelData(polygon).then(function (labelInst) {
-                        _this2._setInLabelState(polygon, 'label', labelInst);
-                        labelInst.addToObjectManager();
-                    });
-                }
+            return new Promise(function (resolve) {
+                _this2._polygonsObjectManager.objects.each(function (polygon) {
+                    if (polygon.geometry.type === 'Polygon') {
+                        _this2._calculatePolygonLabelData(polygon).then(function (label) {
+                            _this2._setInLabelState(polygon, 'label', label);
+                            _this2._initLabelStateListener(polygon);
+                            callback(label);
+                        });
+                    }
+                });
+                resolve();
             });
         };
 
-        PolylabelObjectManager.prototype._calculatePolygons = function _calculatePolygons() {
-            var _this3 = this;
+        PolylabelObjectManager.prototype._calculatePolygonLabelData = function _calculatePolygonLabelData(polygon, isLabelCreated) {
+            var options = this.getOptions(polygon);
+            var zoomRangeOptions = this.getZoomRangeOptions(polygon);
 
-            this._polygonsObjectManager.objects.each(function (polygon) {
-                if (polygon.geometry.type === 'Polygon') {
-                    _this3._analyzeAndSetLabelData(polygon, ['dot', 'label'], _this3._getFromLabelState(polygon, 'label'));
-                }
-            });
+            var label = isLabelCreated ? this._getFromLabelState(polygon, 'label') : new Label(this._map, polygon, this._labelsObjectManager);
+
+            label.setLabelData(options, zoomRangeOptions);
+            return Promise.resolve(label);
         };
 
-        PolylabelObjectManager.prototype._analyzeAndSetLabelData = function _analyzeAndSetLabelData(polygon, types, labelInst, visibleState) {
-            var _this4 = this;
+        PolylabelObjectManager.prototype._analyzeAndSetLabelData = function _analyzeAndSetLabelData(polygon, types, label, visibleState) {
+            var data = label.setDataByZoom(this._map.getZoom(), types, visibleState);
 
-            if (!labelInst) {
-                return;
-            }
-
-            nextTick(function () {
-                var data = labelInst.setDataByZoom(_this4._map.getZoom(), types, visibleState);
-                if (!data) return;
-
-                _this4._setCurrentConfiguredVisibility(polygon, data.visible, data.visibleForce);
-                _this4._setCurrentVisibility(polygon, data.visibleType);
-            });
+            this._setCurrentConfiguredVisibility(polygon, data.currentConfiguredVisibileType);
+            this._setCurrentVisibility(polygon, data.currentVisibleType);
         };
 
-        PolylabelObjectManager.prototype._setCurrentConfiguredVisibility = function _setCurrentConfiguredVisibility(polygon, visible, visibleForce) {
-            var result = visibleForce && ['dot', 'label', 'none'].indexOf(visibleForce) !== -1 ? visibleForce : visible;
-            this._currentConfiguredVisibility.set(polygon, result);
+        PolylabelObjectManager.prototype._setCurrentConfiguredVisibility = function _setCurrentConfiguredVisibility(polygon, type) {
+            this._currentConfiguredVisibility.set(polygon, type);
         };
 
         PolylabelObjectManager.prototype._setCurrentVisibility = function _setCurrentVisibility(polygon, type) {
             this._currentVisibility.set(polygon, ['dot', 'label'].indexOf(type) !== -1 ? type : 'none');
         };
 
-        PolylabelObjectManager.prototype._calculatePolygonLabelData = function _calculatePolygonLabelData(polygon, isLabelInstCreated) {
-            var options = this.getOptions(polygon);
-            var zoomRangeOptions = this.getZoomRangeOptions(polygon);
-
-            var labelInst = isLabelInstCreated ? this._getFromLabelState(polygon, 'label') : new Label(this._map, polygon, this._labelsObjectManager);
-            labelInst.setLabelData(options, zoomRangeOptions);
-
-            return Promise.resolve(labelInst);
-        };
-
         PolylabelObjectManager.prototype._initLabelStateListener = function _initLabelStateListener(polygon) {
-            var _this5 = this;
+            var _this3 = this;
 
             var monitor = new Monitor(this._labelsState.get(polygon));
             this._setInLabelState(polygon, 'labelMonitor', monitor);
             monitor.add('visible', function (newValue) {
-                _this5._analyzeAndSetLabelData(polygon, ['dot', 'label'], _this5._getFromLabelState(polygon, 'label'), newValue);
+                setTimeout(function () {
+                    if (_this3._dblClick) {
+                        _this3._dblClick = false;
+                        return;
+                    }
+                    _this3._analyzeAndSetLabelData(polygon, ['dot', 'label'], _this3._getFromLabelState(polygon, 'label'), newValue);
+                }, 100);
             });
         };
 
-        PolylabelObjectManager.prototype._initLabelsOverlaysListener = function _initLabelsOverlaysListener() {
+        PolylabelObjectManager.prototype._initLabelsOverlaysListeners = function _initLabelsOverlaysListeners() {
             this._labelsObjectManager.objects.overlays.events.add(['add', 'remove'], this._labelsOverlaysEventHandler, this);
         };
 
@@ -1524,29 +1865,25 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
         };
 
         PolylabelObjectManager.prototype._labelOverlaysGeometryChangeHandler = function _labelOverlaysGeometryChangeHandler(event) {
+            var _this4 = this;
+
             var overlay = event.get('target');
             var labelId = overlay._data.id;
-            var labelType = this._getLabelType(labelId);
-            this._getLayoutAndAnalyze(overlay, labelId, labelType);
-        };
-
-        PolylabelObjectManager.prototype._getLayoutAndAnalyze = function _getLayoutAndAnalyze(overlay, labelId, labelType) {
-            var _this6 = this;
 
             overlay.getLayout().then(function (layout) {
-                var label = _this6._labelsObjectManager.objects.getById(labelId);
-                if (label) {
-                    var polygon = label.properties.labelPolygon;
-                    var labelInst = _this6._getFromLabelState(polygon, 'label');
-                    labelInst.setLayout(labelType, layout);
+                var labelType = _this4._getLabelType(labelId);
+                var label = _this4._labelsObjectManager.objects.getById(labelId);
+                if (!label) return;
 
-                    _this6._analyzeAndSetLabelData(polygon, [labelType], labelInst);
-                }
+                var polygon = label.properties.polygon;
+                var labelInst = _this4._getFromLabelState(polygon, 'label');
+                labelInst.setLayout(labelType, layout);
+                _this4._analyzeAndSetLabelData(polygon, [labelType], labelInst);
             });
         };
 
         PolylabelObjectManager.prototype._labelsOverlaysEventHandler = function _labelsOverlaysEventHandler(event) {
-            var _this7 = this;
+            var _this5 = this;
 
             var labelId = event.get('objectId');
             var labelType = this._getLabelType(labelId);
@@ -1555,19 +1892,22 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
             switch (event.get('type')) {
                 case 'add':
                     {
-                        //при создании overlay вешаем на него слушатель geometrychange, чтобы можно было анализировать
-                        //layout подписи, после того как она приняла размеры под зум
-                        // как только геометрия поменялась, начинаем анализ 
-
                         overlay.events.add('geometrychange', this._labelOverlaysGeometryChangeHandler, this);
                         nextTick(function () {
-                            _this7._getLayoutAndAnalyze(overlay, labelId, labelType);
+                            overlay.getLayout().then(function (layout) {
+                                var label = _this5._labelsObjectManager.objects.getById(labelId);
+                                if (!label) return;
+
+                                var polygon = label.properties.polygon;
+                                var labelInst = _this5._getFromLabelState(polygon, 'label');
+                                labelInst.setLayout(labelType, layout);
+                                _this5._analyzeAndSetLabelData(polygon, [labelType], labelInst);
+                            });
                         });
                         break;
                     }
                 case 'remove':
                     {
-                        //при удалении overlay удаляем с него слушатель geometrychange
                         overlay.events.remove('geometrychange', this._labelOverlaysGeometryChangeHandler, this);
                         break;
                     }
@@ -1590,27 +1930,28 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
             }
         };
 
-        PolylabelObjectManager.prototype._clearLabels = function _clearLabels() {
-            this._labelsObjectManager.removeAll();
-        };
-
         PolylabelObjectManager.prototype._clearVisibilityInLabelsState = function _clearVisibilityInLabelsState() {
-            var _this8 = this;
+            var _this6 = this;
 
             this._polygonsObjectManager.objects.each(function (polygon) {
-                _this8._setInLabelState(polygon, 'visible', undefined);
+                _this6._setInLabelState(polygon, 'visible', undefined);
             });
         };
 
         PolylabelObjectManager.prototype._initMapListeners = function _initMapListeners() {
-            var _this9 = this;
+            var _this7 = this;
 
-            this.initMapListeners(function () {
-                _this9._clearVisibilityInLabelsState();
+            this.initMapListeners(function (type) {
+                if (type === 'dblclick') {
+                    _this7._dblClick = true;
+                }
+                if (type === 'boundschange') {
+                    _this7._clearVisibilityInLabelsState();
+                }
             });
         };
 
-        PolylabelObjectManager.prototype._initPolygonCollectionListeners = function _initPolygonCollectionListeners() {
+        PolylabelObjectManager.prototype._initPolygonsObjectsListeners = function _initPolygonsObjectsListeners() {
             this._polygonsObjectManager.objects.events.add(['add', 'remove'], this._polygonCollectionEventHandler, this);
         };
 
@@ -1618,7 +1959,7 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
             switch (event.get('type')) {
                 case 'add':
                     {
-                        var polygon = this._polygonsObjectManager.objects.getById(event.get('objectId'));
+                        var polygon = event.get('child');
                         this._recalculateNewPolygon(polygon);
                         break;
                     }
@@ -1635,15 +1976,16 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
         };
 
         PolylabelObjectManager.prototype._recalculateNewPolygon = function _recalculateNewPolygon(polygon) {
-            var _this10 = this;
+            var _this8 = this;
 
-            this._calculatePolygonLabelData(polygon).then(function (labelInst) {
-                _this10._setInLabelState(polygon, 'label', labelInst);
-                _this10._setInLabelState(polygon, 'visible', undefined);
-                _this10._setInLabelState(polygon, 'isNeedUpdate', true);
-                _this10._initLabelStateListener(polygon);
-                labelInst.addToObjectManager();
-            });
+            if (polygon.geometry.type === 'Polygon') {
+                this._calculatePolygonLabelData(polygon).then(function (label) {
+                    _this8._setInLabelState(polygon, 'label', label);
+                    _this8._initLabelStateListener(polygon);
+                    label.createPlacemarks();
+                    label.addToObjectManager();
+                });
+            }
         };
 
         PolylabelObjectManager.prototype._initPolygonsListeners = function _initPolygonsListeners() {
@@ -1651,50 +1993,24 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
         };
 
         PolylabelObjectManager.prototype._onPolygonOptionsChangeHandler = function _onPolygonOptionsChangeHandler(event) {
-            var _this11 = this;
+            var _this9 = this;
 
             var polygon = this._polygonsObjectManager.objects.getById(event.get('objectId'));
             if (!polygon) return;
 
-            this._calculatePolygonLabelData(polygon, true).then(function (labelInst) {
-                labelInst.setVisibility('phantom');
-                _this11._setInLabelState(polygon, 'label', labelInst);
+            this._calculatePolygonLabelData(polygon, true).then(function (label) {
+                label.setVisibilityForce('none');
+                _this9._setInLabelState(polygon, 'label', label);
 
-                labelInst.setLayoutTemplate();
-                labelInst.setNewOptions(polygon.options);
+                label.setLayoutTemplate();
+                label.setNewOptions(polygon.options);
 
-                _this11._getLabelsOverlays(event.get('objectId')).then(function (layouts) {
-                    var types = ['dot', 'label'];
-                    layouts.forEach(function (l, i) {
-                        labelInst.setLayout(types[i], l);
-                    });
-
-                    _this11._analyzeAndSetLabelData(polygon, types, _this11._getFromLabelState(polygon, 'label'));
-                });
+                _this9._analyzeAndSetLabelData(polygon, ['dot', 'label'], _this9._getFromLabelState(polygon, 'label'));
             });
         };
 
-        PolylabelObjectManager.prototype._getLabelsOverlays = function _getLabelsOverlays(polygonId) {
-            var _this12 = this;
-
-            var overlays = ['dot', '_dot', 'label', '_label'].reduce(function (result, key) {
-                var overlay = _this12._labelsObjectManager.objects.overlays.getById(key + '#' + polygonId);
-                var rKey = key[0] === '_' ? key.slice(1) : key;
-                if (overlay) {
-                    result[rKey] = overlay;
-                }
-                return result;
-            }, {});
-
-            var promises = _utilObjectKeys(overlays).map(function (key) {
-                return overlays[key].getLayout();
-            });
-
-            return Promise.all(promises);
-        };
-
-        PolylabelObjectManager.prototype._initLabelCollectionListeners = function _initLabelCollectionListeners() {
-            var _this13 = this;
+        PolylabelObjectManager.prototype._initLabelsOMListeners = function _initLabelsOMListeners() {
+            var _this10 = this;
 
             var controller = {
                 onBeforeEventFiring: function onBeforeEventFiring(events, type, event) {
@@ -1703,17 +2019,16 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
 
                     var polygonId = labelId.split('#')[1];
                     polygonId = isNaN(Number(polygonId)) ? polygonId : Number(polygonId);
-                    var polygon = _this13._polygonsObjectManager.objects.getById(polygonId);
-                    var label = _this13._labelsObjectManager.objects.getById(labelId);
 
-                    if (label && label.options.pane === 'phantom') return false;
+                    var polygon = _this10._polygonsObjectManager.objects.getById(polygonId);
+                    var label = _this10._labelsObjectManager.objects.getById(labelId);
+                    if (label && label.options.pane === 'phantom' || !polygon) return false;
 
-                    if (polygon) {
-                        _this13._polygonsObjectManager.events.fire('label' + type, {
-                            objectId: polygonId,
-                            type: 'label' + type
-                        });
-                    }
+                    _this10._polygonsObjectManager.events.fire('label' + type, {
+                        objectId: polygonId,
+                        type: 'label' + type
+                    });
+
                     return false;
                 }
             };
@@ -1724,11 +2039,11 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
         };
 
         PolylabelObjectManager.prototype._deleteLabelStateListeners = function _deleteLabelStateListeners() {
-            var _this14 = this;
+            var _this11 = this;
 
             this._polygonsObjectManager.objects.each(function (polygon) {
                 if (polygon.geometry.type === 'Polygon') {
-                    _this14._deleteLabelStateListener(polygon);
+                    _this11._deleteLabelStateListener(polygon);
                 }
             });
         };
@@ -1740,7 +2055,7 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
             }
         };
 
-        PolylabelObjectManager.prototype._deleteLabelsOverlaysListener = function _deleteLabelsOverlaysListener() {
+        PolylabelObjectManager.prototype._deleteLabelsOverlaysListeners = function _deleteLabelsOverlaysListeners() {
             this._labelsObjectManager.objects.overlays.events.remove(['add', 'remove'], this._labelsOverlaysEventHandler, this);
         };
 
@@ -1748,21 +2063,25 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
             this._polygonsObjectManager.objects.events.remove(['optionschange', 'objectoptionschange'], this._onPolygonOptionsChangeHandler, this);
         };
 
-        PolylabelObjectManager.prototype._deletePolygonCollectionListeners = function _deletePolygonCollectionListeners() {
+        PolylabelObjectManager.prototype._deletePolygonsObjectsListeners = function _deletePolygonsObjectsListeners() {
             this._polygonsObjectManager.objects.events.remove(['add', 'remove'], this._polygonCollectionEventHandler, this);
             this.destroyMapListeners();
         };
 
-        PolylabelObjectManager.prototype._deleteLabelCollection = function _deleteLabelCollection() {
-            var _this15 = this;
+        PolylabelObjectManager.prototype._deleteLabelsOMListeners = function _deleteLabelsOMListeners() {
+            var _this12 = this;
 
             this._polygonsObjectManager.objects.each(function (polygon) {
-                var labelInst = _this15._getFromLabelState(polygon, 'label');
+                var labelInst = _this12._getFromLabelState(polygon, 'label');
                 if (polygon.geometry.type === 'Polygon' && labelInst) {
                     labelInst.destroy();
                 }
             });
             this._clearLabels();
+        };
+
+        PolylabelObjectManager.prototype._clearLabels = function _clearLabels() {
+            this._labelsObjectManager.removeAll();
         };
 
         return PolylabelObjectManager;
@@ -2529,8 +2848,8 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager2', ['util.defineClass
 //# sourceMappingURL=PolylabelObjectManager2.js.map
 
 ymaps.modules.define('util.createPolylabel', ['src.polylabel.PolylabelCollection', 'src.polylabel.PolylabelObjectManager', 'ObjectManager'], function (_provide, PCollection, PObjectManager, ObjectManager) {
-  _provide(function (map, data, callback) {
-    return data instanceof ObjectManager ? new PObjectManager(map, data, callback) : new PCollection(map, data, callback);
+  _provide(function (map, data) {
+    return data instanceof ObjectManager ? new PObjectManager(map, data) : new PCollection(map, data);
   });
 });
 //# sourceMappingURL=util.createPolylabel.js.map
@@ -3122,11 +3441,9 @@ ymaps.modules.define('src.util.zoom.setOneZoomVisibility', ['src.util.zoom.getFi
     };
 
     _provide(function (map, zoom, labelInst, labelType) {
-        // if (labelInst._polygon.properties.hintContent === 'Greenland') debugger;
         var labelData = labelInst.getLabelData();
         var coordinates = labelData.getPolygonCoords();
 
-        //Вернет true, если установит данные по layout, false, если нет
         return functions[labelType](map, zoom, labelInst, labelData, coordinates, labelInst.getLayout(labelType));
     });
 
@@ -3145,15 +3462,11 @@ ymaps.modules.define('src.util.zoom.setOneZoomVisibility', ['src.util.zoom.getFi
 
         var labelData = labelDataInst.getAll();
         var zoomInfo = labelDataInst.getZoomInfo(zoom);
-        if (labelData.dotFirstZoom || typeof labelData.dotFirstZoom === 'number' && labelData.dotFirstZoom === 0) {
-            labelDataInst.setZoomInfo(zoom, 'visible', getVisible(zoomInfo.visible, 'dot', zoom >= labelData.dotFirstZoom));
-            return true;
-        }
 
         labelDataInst.setData('dotSize', size);
+
         var firstZoomInside = getFirstZoomInside(map, zoomInfo.center || labelData.autoCenter, coordinates, size, zoomInfo.labelOffset, zoomInfo.permissibleInaccuracyOfVisibility);
         labelDataInst.setZoomInfo(zoom, 'visible', getVisible(zoomInfo.visible, 'dot', zoom >= firstZoomInside));
-        labelDataInst.setData('dotFirstZoom', firstZoomInside);
         return true;
     }
 
@@ -3171,23 +3484,9 @@ ymaps.modules.define('src.util.zoom.setOneZoomVisibility', ['src.util.zoom.getFi
 });
 //# sourceMappingURL=setOneZoomVisibility.js.map
 
-ymaps.modules.define('src.util.zoom.setZoomVisibility', ['util.objectKeys', 'src.util.zoom.getFirstZoomInside', 'src.label.util.getLayoutSize'], function (_provide, _utilObjectKeys, getFirstZoomInside, getLayoutSize) {
-    _provide(function (map, labelInst) {
-        var labelData = labelInst.getLabelData();
-        var coordinates = labelData.getPolygonCoords();
-
-        var dotSize = getLayoutSize(labelInst.getLayout('dot'));
-        if (dotSize) {
-            labelData.setData('dotSize', dotSize);
-
-            analyseDot(map, labelInst, labelData, coordinates, labelInst.getLayout('dot'), dotSize);
-        }
-
-        var labelCache = {};
-        _utilObjectKeys(labelData.getZoomInfo()).forEach(function (z) {
-            analyseLabel(map, labelInst, labelData, z, coordinates, labelInst.getLayout('label'), labelCache);
-        });
-        return Promise.resolve();
+ymaps.modules.define('src.util.zoom.setZoomVisibility', ['src.util.zoom.getFirstZoomInside', 'src.label.util.getLayoutSize'], function (_provide, getFirstZoomInside, getLayoutSize) {
+    _provide(function (labelType, map, zoom, currVisible, layout, center, polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility) {
+        return analyze(labelType, map, zoom, currVisible, layout, center, polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility);
     });
 
     function getVisible(currentType, newType, newIsVisible) {
@@ -3199,26 +3498,16 @@ ymaps.modules.define('src.util.zoom.setZoomVisibility', ['util.objectKeys', 'src
         return result;
     }
 
-    function analyseDot(map, labelInst, labelDataInst, coordinates, layout, size) {
-        var labelData = labelDataInst.getAll();
-        _utilObjectKeys(labelData.zoomInfo).forEach(function (z) {
-            var zoomInfo = labelDataInst.getZoomInfo(z);
-            var zoom = getFirstZoomInside(map, zoomInfo.center || labelData.autoCenter, coordinates, size, zoomInfo.labelOffset, zoomInfo.permissibleInaccuracyOfVisibility);
-            labelDataInst.setZoomInfo(z, 'visible', getVisible(zoomInfo.visible, 'dot', z >= zoom));
-        });
-    }
-
-    function analyseLabel(map, labelInst, labelDataInst, zoom, coordinates, layout, labelCache) {
-        var labelData = labelDataInst.getAll();
-        var zoomInfo = labelData.zoomInfo[zoom];
-        var cacheKey = 'label_' + (zoomInfo.center || labelData.autoCenter) + '_' + zoomInfo.style.className + '_' + zoomInfo.style.textSize;
+    function analyze(type, map, zoom, currVisible, layout, center, polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility) {
         var size = getLayoutSize(layout);
-        if (size) {
-            labelInst.setStyles(zoomInfo.style);
-            labelDataInst.setZoomInfo(zoom, 'labelSize', size);
-            var firstZoom = getFirstZoomInside(map, zoomInfo.center || labelData.autoCenter, coordinates, size, zoomInfo.labelOffset, zoomInfo.permissibleInaccuracyOfVisibility);
-            labelDataInst.setZoomInfo(zoom, 'visible', getVisible(zoomInfo.visible, 'label', zoom >= firstZoom));
-        }
+        if (!size) return;
+
+        var firstZoomInside = getFirstZoomInside(map, center, polygonCoordinates, size, labelOffset, permissibleInaccuracyOfVisibility);
+
+        return {
+            visible: getVisible(currVisible, type, zoom >= firstZoomInside),
+            size: size
+        };
     }
 });
 //# sourceMappingURL=setZoomVisibility.js.map

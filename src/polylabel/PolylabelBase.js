@@ -8,16 +8,24 @@ export default class PolylabelBased {
 
     initMapListeners(callback) {
         this._mapBoundsChangeCallback = callback;
-        this._map.events.add('boundschange', this._mapBoundsChangeHandler, this);
+        this._map.events.add(['boundschange', 'dblclick'], this._mapEventsHandler, this);
     }
 
     destroyMapListeners() {
-        this._map.events.remove('boundschange', this._mapBoundsChangeHandler, this);
+        this._map.events.remove(['boundschange', 'dblclick'], this._mapEventsHandler, this);
     }
 
-    _mapBoundsChangeHandler(event) {
-        if (event.get('newZoom') !== event.get('oldZoom')) {
-            this._mapBoundsChangeCallback(event.get('newZoom'));
+    _mapEventsHandler(event) {
+        switch (event.get('type')) {
+            case 'boundschange': {
+                if (event.get('newZoom') !== event.get('oldZoom')) {
+                    this._mapBoundsChangeCallback('boundschange');
+                } 
+                break;
+            }
+            case 'dblclick': {
+                this._mapBoundsChangeCallback('dblclick');
+            }
         }
     }
 

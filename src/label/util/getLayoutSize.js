@@ -7,7 +7,8 @@ export default function (layout) {
     let height = 0;
 
     while (width === 0 && height === 0) {
-        el = el.children[0];        
+        el = el.children[0];
+        if (!el) break;    
         const rect = el.getBoundingClientRect();
         width = rect.width;
         height = rect.height;

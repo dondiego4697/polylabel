@@ -1,6 +1,6 @@
 import Placemark from 'Placemark';
 import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
-import LabelData from 'src.label.LabelData';
+import LabelData from 'src.label.GeoObjectCollection.LabelData';
 import getBaseLayoutTemplates from 'src.label.util.layoutTemplates.getBaseLayoutTemplates';
 import createLayoutTemplates from 'src.label.util.layoutTemplates.createLayoutTemplates';
 
