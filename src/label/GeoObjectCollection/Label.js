@@ -1,6 +1,6 @@
 import Placemark from 'Placemark';
 import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
-import LabelData from 'src.label.GeoObjectCollection.LabelData';
+import LabelData from 'src.label.util.LabelData';
 import getBaseLayoutTemplates from 'src.label.util.layoutTemplates.getBaseLayoutTemplates';
 import createLayoutTemplates from 'src.label.util.layoutTemplates.createLayoutTemplates';
 
@@ -20,21 +20,9 @@ export default class Label {
             label: null,
             dot: null
         };
+        this._baseLayoutTemplates = null;
+        this._layoutTemplates = null;
         this._init();
-    }
-
-    /**
-     * Устанавливает данные о подписи на каждый зум
-     * @param {Object} options - опции, необходимые для подписи
-     * @param {Object} zoomRangeOptions - опции для нескольких зумов, необходимые для подписи
-     */
-    setLabelData(options, zoomRangeOptions) {
-        this._data = new LabelData(this._polygon, options, zoomRangeOptions, this._map, this);
-        return this._data;
-    }
-
-    getLabelData() {
-        return this._data;
     }
 
     getPlacemark(type) {
@@ -43,6 +31,10 @@ export default class Label {
 
     getLayout(type) {
         return this._layout[type];
+    }
+
+    setLayout(type, layout) {
+        this._layout[type] = layout;
     }
 
     removeFromCollection() {
@@ -87,18 +79,21 @@ export default class Label {
     }
 
     _init() {
-        const baseLayouts = getBaseLayoutTemplates();
-        const layouts = createLayoutTemplates(
+        this._baseLayoutTemplates = getBaseLayoutTemplates();
+        this._layoutTemplates = createLayoutTemplates(
             this._polygon.options.get('labelLayout'),
             this._polygon.options.get('labelDotLayout')
         );
-        ['label', 'dot'].forEach(key => {
-            this._placemark[key] = Label._createPlacemark({
+    }
+
+    createPlacemarks() {
+        ['label', 'dot'].forEach(type => {
+            this._placemark[type] = Label._createPlacemark({
                 properties: Object.assign({}, {
-                    labelPolygon: this._polygon
+                    polygon: this._polygon
                 }, this._polygon.properties.getAll()),
-                options: Object.assign({}, this._polygon.options.getAll(), layouts[key])
-            }, baseLayouts[key]);
+                options: Object.assign({}, this._polygon.options.getAll(), this._layoutTemplates[type])
+            }, this._baseLayoutTemplates[type]);
         });
     }
 
@@ -111,56 +106,64 @@ export default class Label {
         return new Placemark([0, 0], params.properties, options);
     }
 
-    /**
-     * Устанавливает необходимые свойства подписи для текущего зума
-     * @return {Object}
-     * visible - рассчитанный тип, который виден
-     * visibleForce - рассчитанный тип, который виден принудительно
-     * visibleType - текущий тип, который виден
-     */
-    setDataByZoom(zoom, visibleState) {
-        const allData = this._data.getAll();
-
-        this.setStyles(allData.zoomInfo[zoom].style);
-        this._data.setZoomData(zoom);
-
-        let {zoomInfo, autoCenter, dotVisible, dotSize} = allData;
-        zoomInfo = zoomInfo[zoom];
-
-        this.setCoordinates(zoomInfo.center || autoCenter);
-
-        visibleState = visibleState ? visibleState : zoomInfo.visibleForce;
-        let visibleType = visibleState === 'auto' ? zoomInfo.visible : visibleState;
-        if (visibleType === 'dot' && !dotVisible) {
-            visibleType = 'none';
-        }
-        this.setVisibility(visibleType);
-
-        if (['dot', 'label'].indexOf(visibleType) !== -1) {
-            this.setCenterAndIconShape(
-                visibleType,
-                visibleType === 'dot' ? dotSize : zoomInfo.labelSize,
-                zoomInfo.labelOffset
-            );
-        }
-        return {
-            visible: zoomInfo.visible,
-            visibleForce: zoomInfo.visibleForce,
-            visibleType
-        };
+    createLabelData(options, zoomRangeOptions) {
+        this._data = new LabelData(this._polygon, options, zoomRangeOptions, this._map, this);
+        return this._data;
     }
 
-    /**
-     * Устанавливает template для подписи
-     */
+    getLabelData() {
+        return this._data;
+    }
+
+    setDataByZoom(zoom, visibleState) {
+        ['dot', 'label'].forEach(type => {
+            if (type === 'label') {
+                const styles = this._data.getStyles(zoom);
+                this.setStyles({
+                    className: styles.className,
+                    textSize: styles.textSize,
+                    textColor: styles.textColor
+                });
+            }
+            this._data.setVisible(zoom, type, this._layout[type]);
+        });
+
+        const currentVisibleType = this.setVisibility(
+            visibleState,
+            this._data.getVisibility(zoom),
+            this._data.getData('dotVisible')
+        );
+
+        if (['label', 'dot'].indexOf(currentVisibleType) !== -1 &&
+            this._data.getSize(zoom, currentVisibleType)) {
+            this.setCoordinates(this._data.getCenterCoords(zoom));
+            this.setCenterAndIconShape(
+                currentVisibleType,
+                this._data.getSize(zoom, currentVisibleType),
+                this._data.getOffset(zoom)
+            );
+        }
+
+        return {
+            currentVisibleType,
+            currentConfiguredVisibileType: this._data.getVisibility(zoom)
+        }
+    }
+
     setLayoutTemplate() {
-        const layouts = createLayoutTemplates(
+        this._layoutTemplates = createLayoutTemplates(
             this._polygon.options.get('labelLayout'),
             this._polygon.options.get('labelDotLayout')
         );
         
-        Object.keys(layouts).forEach(key => {
-            this._placemark[key].options.set(layouts[key]);
+        Object.keys(this._layoutTemplates).forEach(type => {
+            this._placemark[type].options.set(this._layoutTemplates[type]);
+        });
+    }
+
+    setNewOptions(newOptions) {
+        ['dot', 'label'].forEach(type => {
+            this._placemark[type].options.set(newOptions);
         });
     }
 
@@ -175,14 +178,26 @@ export default class Label {
         }
     }
 
+    setVisibilityForce(visibleType) {
+        Object.keys(this._placemark).forEach(type => {
+            const pane = type === visibleType ? 'places' : 'phantom';
+            if (this._placemark[type].options.get('pane') !== pane) {
+                this._placemark[type].options.set({pane});
+            }
+        });
+    }
+
     /**
      * Устанавливает видимость для подписи
      */
-    setVisibility(visibleType) {
-        Object.keys(this._placemark).forEach(type => {
-            const pane = type === visibleType ? 'places' : 'phantom';
-            this._placemark[type].options.set({pane});
-        });
+    setVisibility(visibleState, visible, dotVisible) {
+        let currState = visibleState && visibleState !== 'auto' ? visibleState : visible;
+        if (currState === 'dot' && !dotVisible) {
+            currState = 'none';
+        }
+
+        this.setVisibilityForce(currState);
+        return currState;
     }
 
     /**

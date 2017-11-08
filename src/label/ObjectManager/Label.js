@@ -1,5 +1,5 @@
 import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
-import LabelData from 'src.label.ObjectManager.LabelData';
+import LabelData from 'src.label.util.LabelData';
 import getBaseLayoutTemplates from 'src.label.util.layoutTemplates.getBaseLayoutTemplates';
 import createLayoutTemplates from 'src.label.util.layoutTemplates.createLayoutTemplates';
 
@@ -20,12 +20,12 @@ export default class Label {
             dot: null
         };
         this._baseLayoutTemplates = null;
-        this.layoutTemplates = null;
+        this._layoutTemplates = null;
         this._init();
     }
 
     destroy() {
-        this.removeFromCollection();
+        this.removeFromObjectManager();
     }
 
     getPlacemark(type) {
@@ -42,7 +42,7 @@ export default class Label {
         });
     }
 
-    removeFromCollection() {
+    removeFromObjectManager() {
         ['label', 'dot'].forEach(type => {
             this._objectManager.remove(this._placemark[type]);
         });
@@ -109,13 +109,13 @@ export default class Label {
     }
 
     setLayoutTemplate() {
-        const layouts = createLayoutTemplates(
+        this._layoutTemplates = createLayoutTemplates(
             this._polygon.options.labelLayout,
             this._polygon.options.labelDotLayout
         );
         
-        Object.keys(layouts).forEach(key => {
-            this._updateOptions(this._placemark[key].id, layouts[key]);
+        Object.keys(this._layoutTemplates).forEach(type => {
+            this._updateOptions(this._placemark[type].id, this._layoutTemplates[type]);
         });
     }
 
@@ -129,13 +129,7 @@ export default class Label {
         });
     }
 
-    setLabelData(options, zoomRangeOptions) {
-        this._data = new LabelData(this._polygon, options, zoomRangeOptions, this._map, this);
-        return this._data;
-    }
-
     setDataByZoom(zoom, types, visibleState) {
-        let result = {};
         types.forEach(type => {
             if (type === 'label') {
                 const styles = this._data.getStyles(zoom);
@@ -222,13 +216,7 @@ export default class Label {
             currState = 'none';
         }
 
-        Object.keys(this._placemark).forEach(type => {
-            const pane = type === currState ? 'places' : 'phantom';
-            const label = this._objectManager.objects.getById(this._placemark[type].id);
-            if (label && label.options.pane !== pane) {
-                this._updateOptions(this._placemark[type].id, {pane});
-            }
-        });
+        this.setVisibilityForce(currState);
         return currState;
     }
 

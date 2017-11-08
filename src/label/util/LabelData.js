@@ -2,6 +2,7 @@ import CONFIG from 'src.config';
 import parseZoomData from 'src.util.zoom.parseZoomData';
 import getPolylabelCenter from 'src.util.getPolesOfInaccessibility';
 import setZoomVisibility from 'src.util.zoom.setZoomVisibility';
+import GeoObject from 'GeoObject';
 
 const {
     MIN_ZOOM,
@@ -43,7 +44,9 @@ export default class LabelData {
     }
 
     getPolygonCoords() {
-        return this._polygon.geometry.coordinates[this._data.polygonIndex];
+        return this._polygon instanceof GeoObject ?
+            this._polygon.geometry.getCoordinates()[this._data.polygonIndex] :
+            this._polygon.geometry.coordinates[this._data.polygonIndex];
     }
 
     getCenterCoords(zoom) {
@@ -97,7 +100,11 @@ export default class LabelData {
     }
 
     _init() {
-        const autoCenterData = getPolylabelCenter(this._polygon.geometry.coordinates, 1.0);
+        const coordinates =  this._polygon instanceof GeoObject ?
+            this._polygon.geometry.getCoordinates() :
+            this._polygon.geometry.coordinates;
+
+        const autoCenterData = getPolylabelCenter(coordinates, 1.0);
         this._data.autoCenter = autoCenterData.center;
         this._data.polygonIndex = autoCenterData.index;
 

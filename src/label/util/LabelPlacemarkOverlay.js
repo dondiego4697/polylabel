@@ -11,7 +11,7 @@ export default class LabelPlacemarkOverlay extends overlayPlacemark {
 
     getData() {
         const polygon = this._data.geoObject instanceof GeoObject ?
-            this._data.geoObject.properties.get('labelPolygon') :
+            this._data.geoObject.properties.get('polygon') :
             this._data.properties.polygon;
         
         return {

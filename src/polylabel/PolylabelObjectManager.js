@@ -54,36 +54,17 @@ export default class PolylabelObjectManager extends PBase {
         this._initPolygonsListeners();
         this._initLabelsOMListeners();
         
-        this._firstCalculatePolygons();
-        this._initMapListeners();
-    }
-
-    /**
-     * Рассчитывает данные для подписей полигонов и устанавливает их для текущего зума
-     */
-    _firstCalculatePolygons() {
-        this._calculatePolygons(label => {
-            label.createPlacemarks();
-            label.addToObjectManager();
-        });
+        this._calculatePolygons().then(() => this._initMapListeners());
     }
 
     /**
      * Устанавливает данные для подписей для текущего зума
      */
-    _calculatePolygons(callback) {
-        return new Promise(resolve => {
-            this._polygonsObjectManager.objects.each(polygon => {
-                if (polygon.geometry.type === 'Polygon') {
-                    this._calculatePolygonLabelData(polygon).then(label => {
-                        this._setInLabelState(polygon, 'label', label); 
-                        this._initLabelStateListener(polygon);                        
-                        callback(label);                   
-                    });
-                }
-            });
-            resolve();
+    _calculatePolygons() {
+        this._polygonsObjectManager.objects.each(polygon => {
+            this._calculateNewPolygon(polygon);
         });
+        return Promise.resolve();
     }
 
     /**
@@ -98,7 +79,7 @@ export default class PolylabelObjectManager extends PBase {
             this._getFromLabelState(polygon, 'label') :
             new Label(this._map, polygon, this._labelsObjectManager);
         
-        label.setLabelData(options, zoomRangeOptions);
+        label.createLabelData(options, zoomRangeOptions);
         return Promise.resolve(label);
     }
 
@@ -126,7 +107,7 @@ export default class PolylabelObjectManager extends PBase {
     _initLabelStateListener(polygon) {
         const monitor = new Monitor(this._labelsState.get(polygon));
         this._setInLabelState(polygon, 'labelMonitor', monitor);
-        monitor.add('visible', (newValue) => {
+        monitor.add('visible', newValue => {
             setTimeout(() => {
                 if (this._dblClick) {
                     this._dblClick = false;
@@ -205,9 +186,7 @@ export default class PolylabelObjectManager extends PBase {
 
     _getFromLabelState(polygon, key) {
         let labelState = this._labelsState.get(polygon);
-        if (labelState) {
-            return labelState.get(key);
-        }
+        if (labelState) return labelState.get(key);
     }
 
     _clearVisibilityInLabelsState() {
@@ -217,7 +196,7 @@ export default class PolylabelObjectManager extends PBase {
     }
 
     _initMapListeners() {
-        this.initMapListeners((type) => {
+        this.initMapListeners(type => {
             if (type === 'dblclick') {
                 this._dblClick = true;                
             }
@@ -235,21 +214,19 @@ export default class PolylabelObjectManager extends PBase {
         switch (event.get('type')) {
             case 'add': {
                 const polygon = event.get('child');
-                this._recalculateNewPolygon(polygon);
+                this._calculateNewPolygon(polygon);
                 break;
             }
             case 'remove': {
                 const polygon = event.get('child');
-                let labelInst = this._getFromLabelState(polygon, 'label');
-                if (labelInst) {
-                    labelInst.destroy();
-                }
+                let label = this._getFromLabelState(polygon, 'label');
+                if (label) label.destroy();
                 break;
             }
         }
     }
 
-    _recalculateNewPolygon(polygon) {
+    _calculateNewPolygon(polygon) {
         if (polygon.geometry.type === 'Polygon') {
             this._calculatePolygonLabelData(polygon).then(label => {
                 this._setInLabelState(polygon, 'label', label); 
@@ -272,7 +249,7 @@ export default class PolylabelObjectManager extends PBase {
         const polygon = this._polygonsObjectManager.objects.getById(event.get('objectId'));
         if (!polygon) return;
         
-        this._calculatePolygonLabelData(polygon, true).then((label) => {            
+        this._calculatePolygonLabelData(polygon, true).then(label => {            
             label.setVisibilityForce('none');
             this._setInLabelState(polygon, 'label', label);
 
@@ -320,9 +297,7 @@ export default class PolylabelObjectManager extends PBase {
 
     _deleteLabelStateListener(polygon) {
         const monitor = this._getFromLabelState(polygon, 'labelMonitor');
-        if (monitor) {
-            monitor.removeAll();
-        }
+        if (monitor) monitor.removeAll();
     }
 
     _deleteLabelsOverlaysListeners() {
@@ -344,9 +319,9 @@ export default class PolylabelObjectManager extends PBase {
      */
     _deleteLabelsOMListeners() {
         this._polygonsObjectManager.objects.each(polygon => {
-            const labelInst = this._getFromLabelState(polygon, 'label');
-            if (polygon.geometry.type === 'Polygon' && labelInst) {
-                labelInst.destroy();
+            const label = this._getFromLabelState(polygon, 'label');
+            if (polygon.geometry.type === 'Polygon' && label) {
+                label.destroy();
             }
         });
         this._clearLabels();
