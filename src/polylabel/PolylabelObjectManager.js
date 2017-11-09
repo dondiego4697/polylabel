@@ -119,7 +119,7 @@ export default class PolylabelObjectManager extends PBase {
                     this._getFromLabelState(polygon, 'label'),
                     newValue
                 );
-            }, 100);
+            }, 150);
         });
     }
 

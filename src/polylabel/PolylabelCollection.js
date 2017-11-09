@@ -212,7 +212,7 @@ export default class PolylabelCollection extends PBase {
                     this._getFromLabelState(polygon, 'label'),
                     newValue
                 );
-            }, 100);
+            }, 150);
         });
     }
 

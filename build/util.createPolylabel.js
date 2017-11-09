@@ -1215,7 +1215,7 @@ ymaps.modules.define('src.polylabel.PolylabelCollection', ['util.defineClass', '
                         return;
                     }
                     _this9._analyzeAndSetLabelData(polygon, _this9._getFromLabelState(polygon, 'label'), newValue);
-                }, 100);
+                }, 150);
             });
         };
 
@@ -1478,7 +1478,7 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
                         return;
                     }
                     _this4._analyzeAndSetLabelData(polygon, ['dot', 'label'], _this4._getFromLabelState(polygon, 'label'), newValue);
-                }, 100);
+                }, 150);
             });
         };
 
@@ -1712,9 +1712,9 @@ ymaps.modules.define('src.polylabel.PolylabelObjectManager', ['util.defineClass'
 //# sourceMappingURL=PolylabelObjectManager.js.map
 
 ymaps.modules.define('util.createPolylabel', ['src.polylabel.PolylabelCollection', 'src.polylabel.PolylabelObjectManager', 'ObjectManager'], function (_provide, PCollection, PObjectManager, ObjectManager) {
-  _provide(function (map, data) {
-    return data instanceof ObjectManager ? new PObjectManager(map, data) : new PCollection(map, data);
-  });
+    _provide(function (map, data) {
+        return data instanceof ObjectManager ? new PObjectManager(map, data) : new PCollection(map, data);
+    });
 });
 //# sourceMappingURL=util.createPolylabel.js.map
 
