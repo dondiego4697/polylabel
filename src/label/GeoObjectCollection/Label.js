@@ -33,6 +33,10 @@ export default class Label {
         return this._layout[type];
     }
 
+    getOverlay(type) {
+        return this._overlay[type];
+    }
+
     setLayout(type, layout) {
         this._layout[type] = layout;
     }
@@ -62,17 +66,14 @@ export default class Label {
             if (!this._placemark[type].getParent()) {
                 this._parentCollection.add(this._placemark[type]);
             }
+
             return this.getLabelLayout(type).then(layout => {
-                this._layout[type] = layout;
+                this._layout[type] = layout;                                    
             });
         });
         return Promise.all(layouts);
     }
 
-    /**
-     * Возвращает layout для подписи
-     * @param {string} type - тип подписи (label | dot), у которой необходимо получить layout
-     */
     getLabelLayout(type) {
         return this._placemark[type].getOverlay()
             .then(overlay => overlay.getLayout());
@@ -125,6 +126,7 @@ export default class Label {
                     textColor: styles.textColor
                 });
             }
+            this.setVisibilityForce('none');            
             this._data.setVisible(zoom, type, this._layout[type]);
         });
 

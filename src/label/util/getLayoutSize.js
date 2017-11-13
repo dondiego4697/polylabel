@@ -1,17 +1,10 @@
 export default function (layout) {
     let el = layout && layout.getElement();
-    if (!el) {
-        return;
-    }
-    let width = 0;
-    let height = 0;
+    if (!el) return;
 
-    while (width === 0 && height === 0) {
-        el = el.children[0];
-        if (!el) break;    
-        const rect = el.getBoundingClientRect();
-        width = rect.width;
-        height = rect.height;
-    }
+    el = el.getElementsByClassName('ymaps-polylabel-view')[0];
+    if (!el) return;
+
+    const {width, height} = el.getBoundingClientRect();
     return {width, height};
 }

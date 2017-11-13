@@ -108,18 +108,13 @@ export default class PolylabelObjectManager extends PBase {
         const monitor = new Monitor(this._labelsState.get(polygon));
         this._setInLabelState(polygon, 'labelMonitor', monitor);
         monitor.add('visible', newValue => {
-            setTimeout(() => {
-                if (this._dblClick) {
-                    this._dblClick = false;
-                    return;
-                }
-                this._analyzeAndSetLabelData(
-                    polygon,
-                    ['dot', 'label'],
-                    this._getFromLabelState(polygon, 'label'),
-                    newValue
-                );
-            }, 150);
+            if (!polygon) return;
+            this._analyzeAndSetLabelData(
+                polygon,
+                ['dot', 'label'],
+                this._getFromLabelState(polygon, 'label'),
+                newValue
+            );            
         });
     }
 
@@ -155,8 +150,10 @@ export default class PolylabelObjectManager extends PBase {
         switch (event.get('type')) {
             case 'add': {
                 overlay.events.add('geometrychange', this._labelOverlaysGeometryChangeHandler, this);
-                nextTick(() => {
+                nextTick(() => { // overlay добавляется на карту на следующем тике
+                    if (!overlay) return;
                     overlay.getLayout().then(layout => {
+                        if (!layout) return;
                         const label = this._labelsObjectManager.objects.getById(labelId);
                         if (!label) return;
 
@@ -197,9 +194,6 @@ export default class PolylabelObjectManager extends PBase {
 
     _initMapListeners() {
         this.initMapListeners(type => {
-            if (type === 'dblclick') {
-                this._dblClick = true;                
-            }
             if (type === 'boundschange') {
                 this._clearVisibilityInLabelsState();
             }
@@ -219,6 +213,7 @@ export default class PolylabelObjectManager extends PBase {
             }
             case 'remove': {
                 const polygon = event.get('child');
+                this._deleteLabelStateListener(polygon);
                 let label = this._getFromLabelState(polygon, 'label');
                 if (label) label.destroy();
                 break;

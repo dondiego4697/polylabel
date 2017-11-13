@@ -17,13 +17,14 @@
 
 Далее запускаем модуль:
 ```js
-/**
- * @param {Map} map - экземпляр карты
- * @param {GeoObjectCollection | ObjectManager} component - 
- * экземпляр коллекции или менеджера объектов, в котором находятся полигоны для подписи
- */
-const polyLabeler = new ymaps.util.createPolylabel(map, component);
-
+ymaps.ready(['util.createPolylabel']).then(function () {
+    /**
+    * @param {Map} map - экземпляр карты
+    * @param {GeoObjectCollection | ObjectManager} component - 
+    * экземпляр коллекции или менеджера объектов, в котором находятся полигоны для     подписи
+    */
+    const polyLabeler = new ymaps.util.createPolylabel(map, component);
+});
 ```
 
 Документация

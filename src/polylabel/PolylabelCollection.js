@@ -10,7 +10,7 @@ import Event from 'Event';
 export default class PolylabelCollection extends PBase {
     constructor(map, polygonsCollection) {
         super(map);
-                
+
         this._map = map;
         this._labelsCollection = new GeoObjectCollection();
         this._labelsState = new WeakMap();
@@ -122,12 +122,10 @@ export default class PolylabelCollection extends PBase {
      */
     _analyzeAndSetLabelData(polygon, label, visibleState) {
         return new Promise(resolve => {
-            nextTick(() => {
-                const data = label.setDataByZoom(this._map.getZoom(), visibleState);
-                this._setCurrentConfiguredVisibility(polygon, data.currentConfiguredVisibileType);
-                this._setCurrentVisibility(polygon, data.currentVisibleType);
-                resolve();
-            });
+            const data = label.setDataByZoom(this._map.getZoom(), visibleState);
+            this._setCurrentConfiguredVisibility(polygon, data.currentConfiguredVisibileType);
+            this._setCurrentVisibility(polygon, data.currentVisibleType);
+            resolve();
         });
     }
 
@@ -149,17 +147,19 @@ export default class PolylabelCollection extends PBase {
      * Рассчитывает добавленный в коллекцию новый полигон
      */
     _calculateNewPolygon(polygon) {
+        if (polygon.geometry.getType() !== 'Polygon') {
+            return Promise.reject();
+        }
+
         return new Promise(resolve => {
-            if (polygon.geometry.getType() === 'Polygon') {
-                this._calculatePolygonLabelData(polygon).then(label => {
-                    this._setInLabelState(polygon, 'label', label);
-                    this._initLabelStateListener(polygon);
-                    label.createPlacemarks();
-                    label.addToCollection().then(() => {
-                        resolve(label);
-                    });                
-                });
-            }
+            this._calculatePolygonLabelData(polygon).then(label => {
+                this._setInLabelState(polygon, 'label', label);
+                this._initLabelStateListener(polygon);
+                label.createPlacemarks();
+                label.addToCollection().then(() => {
+                    resolve(label);
+                });                
+            });
         });
     }
 
@@ -202,17 +202,11 @@ export default class PolylabelCollection extends PBase {
         const monitor = new Monitor(this._labelsState.get(polygon));
         this._setInLabelState(polygon, 'labelMonitor', monitor);
         monitor.add('visible', newValue => {
-            setTimeout(() => {
-                if (this._dblClick) {
-                    this._dblClick = false;
-                    return;
-                }
-                this._analyzeAndSetLabelData(
-                    polygon,
-                    this._getFromLabelState(polygon, 'label'),
-                    newValue
-                );
-            }, 150);
+            this._analyzeAndSetLabelData(
+                polygon,
+                this._getFromLabelState(polygon, 'label'),
+                newValue
+            );
         });
     }
 
@@ -233,29 +227,24 @@ export default class PolylabelCollection extends PBase {
     }
 
     _onPolygonParentChangeHandler(event) {
-        this._isPolygonParentChange.set(event.get('target'), 2);
-        // 2 - это кол-во событий, которые слушаем ['optionschange', 'propertieschange']
-        // Это необходимо, чтобы при удалении полигона в _onPolygonOptionsChangeHandler
-        // не происходило присваивание опций пустой подписи,
-        // тк при удалении объекта из коллекции у него меняются все опции
+        this._isPolygonParentChange.set(event.get('target'), true);
     }
 
     _onPolygonOptionsChangeHandler(event) {
-        const polygon = event.get('target');
-        let label = this._getFromLabelState(polygon, 'label');
-
-        const curr = this._isPolygonParentChange.get(polygon);
-        if (curr > 0 || !label) {
-            this._isPolygonParentChange.set(event.get('target'), curr - 1);
-            return;
-        }
-
-        label.setVisibilityForce('none');
-        label.setLayoutTemplate();
-
-        this._calculatePolygonLabelData(polygon, true).then(label => {
-            this._setInLabelState(polygon, 'label', label);
-            this._analyzeAndSetLabelData(polygon, label);
+        nextTick(() => { // тк может произойти удаление объекта и optionschange тоже дернется
+            const polygon = event.get('target');
+            const label = this._getFromLabelState(polygon, 'label');
+    
+            const curr = this._isPolygonParentChange.get(polygon);
+            if (curr || !label) return;
+    
+            label.setVisibilityForce('none');
+            label.setLayoutTemplate();
+    
+            this._calculatePolygonLabelData(polygon, true).then(label => {
+                this._setInLabelState(polygon, 'label', label);
+                this._analyzeAndSetLabelData(polygon, label);
+            });
         });
     }
 
@@ -276,8 +265,9 @@ export default class PolylabelCollection extends PBase {
                 break;
             }
             case 'remove': {
-                this._deleteLabelStateListener(event.get('child'));
-                const label = this._getFromLabelState(event.get('child'), 'label');
+                const polygon = event.get('child');                
+                this._deleteLabelStateListener(polygon);
+                const label = this._getFromLabelState(polygon, 'label');
                 if (label) label.destroy();
                 break;
             }
@@ -288,7 +278,7 @@ export default class PolylabelCollection extends PBase {
      * Делает проброс событий с подписи на соответствующий полигон
      */
     _initLabelCollectionListeners() {
-        let controller = {
+        const controller = {
             onBeforeEventFiring: function (events, type, event) {
                 if (event.get('target').options.get('pane') === 'phantom') return false;
 
@@ -303,7 +293,7 @@ export default class PolylabelCollection extends PBase {
                 return false;
             }
         };
-        let eventManager = new EventManager({
+        const eventManager = new EventManager({
             controllers: [controller]
         });
         this._labelsCollection.events.setParent(eventManager);
@@ -311,9 +301,6 @@ export default class PolylabelCollection extends PBase {
 
     _initMapListeners() {
         this.initMapListeners((type) => {
-            if (type === 'dblclick') {
-                this._dblClick = true;                
-            }
             if (type === 'boundschange') {
                 this._clearVisibilityInLabelsState();
                 this._calculatePolygons();
@@ -332,9 +319,7 @@ export default class PolylabelCollection extends PBase {
      */
     _deleteLabelStateListener(polygon) {
         const monitor = this._getFromLabelState(polygon, 'labelMonitor');
-        if (monitor) {
-            monitor.removeAll();
-        }
+        if (monitor) monitor.removeAll();
     }
 
     /**

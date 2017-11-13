@@ -20,7 +20,7 @@ export default class LabelData {
             polygonIndex: 0,
             dotVisible: typeof options.labelDotVisible !== 'boolean' ? true : options.labelDotVisible
         };
-        this.parsedOptions = this._parseOptions(zoomRangeOptions);
+        this.parsedOptions = LabelData._parseOptions(zoomRangeOptions);
         this._init();
     }
 
@@ -109,15 +109,11 @@ export default class LabelData {
         this._data.polygonIndex = autoCenterData.index;
 
         for (let z = MIN_ZOOM; z <= MAX_ZOOM; z++) {
-            this._data.zoomInfo[z] = this._fillZoom(z);
+            this._data.zoomInfo[z] = LabelData._createDefaultZoomInfo(z);
         }
     }
 
-    _fillZoom(zoom) {
-        return this._createDefaultZoomInfo();
-    }
-
-    _parseOptions(options) {
+    static _parseOptions(options) {
         let result = {};
         Object.keys(options).forEach(key => {
             result[key] = parseZoomData(options[key]);
@@ -125,7 +121,7 @@ export default class LabelData {
         return result;
     }
 
-    _createDefaultZoomInfo() {
+    static _createDefaultZoomInfo() {
         return {
             visible: 'none', // label | dot | none,
             dotSize: undefined,

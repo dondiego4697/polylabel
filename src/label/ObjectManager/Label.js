@@ -139,6 +139,7 @@ export default class Label {
                     textColor: styles.textColor
                 });
             }
+            this.setVisibilityForce('none');
             this._data.setVisible(zoom, type, this._layout[type]);
         });
 

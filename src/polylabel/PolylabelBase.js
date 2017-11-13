@@ -8,11 +8,11 @@ export default class PolylabelBased {
 
     initMapListeners(callback) {
         this._mapBoundsChangeCallback = callback;
-        this._map.events.add(['boundschange', 'dblclick'], this._mapEventsHandler, this);
+        this._map.events.add(['boundschange'], this._mapEventsHandler, this);
     }
 
     destroyMapListeners() {
-        this._map.events.remove(['boundschange', 'dblclick'], this._mapEventsHandler, this);
+        this._map.events.remove(['boundschange'], this._mapEventsHandler, this);
     }
 
     _mapEventsHandler(event) {
@@ -22,9 +22,6 @@ export default class PolylabelBased {
                     this._mapBoundsChangeCallback('boundschange');
                 } 
                 break;
-            }
-            case 'dblclick': {
-                this._mapBoundsChangeCallback('dblclick');
             }
         }
     }
