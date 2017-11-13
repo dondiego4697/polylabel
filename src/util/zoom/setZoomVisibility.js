@@ -2,7 +2,8 @@ import getFirstZoomInside from 'src.util.zoom.getFirstZoomInside';
 import getLayoutSize from 'src.label.util.getLayoutSize';
 
 export default function (
-    labelType, map, zoom, currVisible, layout, center, polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility
+    labelType, map, zoom, currVisible, layout, center,
+    polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility
 ) {
     return analyze(
         labelType,
@@ -26,7 +27,8 @@ function getVisible(currentType, newType, newIsVisible) {
     return result;
 }
 
-function analyze(type, map, zoom, currVisible, layout, center, polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility) {
+function analyze(type, map, zoom, currVisible, layout, center,
+    polygonCoordinates, labelOffset, permissibleInaccuracyOfVisibility) {
     const size = getLayoutSize(layout);
     if (!size) return;
 

@@ -113,7 +113,7 @@ export default class Label {
             this._polygon.options.labelLayout,
             this._polygon.options.labelDotLayout
         );
-        
+
         Object.keys(this._layoutTemplates).forEach(type => {
             this._updateOptions(this._placemark[type].id, this._layoutTemplates[type]);
         });
@@ -121,7 +121,7 @@ export default class Label {
 
     setNewOptions(newOptions) {
         ['dot', 'label'].forEach((type) => {
-            Object.assign(this._placemark[type].options, newOptions);      
+            Object.assign(this._placemark[type].options, newOptions);
             this._updateOptions(
                 this._placemark[type].id,
                 this._placemark[type].options
@@ -162,7 +162,7 @@ export default class Label {
         return {
             currentVisibleType,
             currentConfiguredVisibileType: this._data.getVisibility(zoom)
-        }
+        };
     }
 
     setCenterAndIconShape(type, size, offset) {

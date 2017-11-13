@@ -1,10 +1,10 @@
 import templateLayoutFactory from 'templateLayoutFactory';
 
-const template = templateLayoutFactory.createClass(`
-    <div class="ymaps-polylabel-view" {% style %}position: {{options.labelPosition}};
+const template = templateLayoutFactory.createClass(
+    `<div class="ymaps-polylabel-view" {% style %}position: {{options.labelPosition}};
         top: {{options.labelTop}}px; left: {{options.labelLeft}}px; {% endstyle %}>
             {% include options.labelDotTemplateLayout %}
-        </div>`
-    );
+    </div>`
+);
 
 export default template;

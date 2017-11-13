@@ -133,7 +133,7 @@ export default class PolylabelCollection extends PBase {
      * Устанавливает статус текущей видимости для полигона (автоматически рассчитанный)
      */
     _setCurrentConfiguredVisibility(polygon, type) {
-        this._currentConfiguredVisibility.set(polygon, type);        
+        this._currentConfiguredVisibility.set(polygon, type);
     }
 
     /**
@@ -158,7 +158,7 @@ export default class PolylabelCollection extends PBase {
                 label.createPlacemarks();
                 label.addToCollection().then(() => {
                     resolve(label);
-                });                
+                });
             });
         });
     }
@@ -220,7 +220,7 @@ export default class PolylabelCollection extends PBase {
      * Создает слушатели событий на полигон
      */
     _initPolygonListener(polygon) {
-        if (polygon.geometry.getType() === 'Polygon') {            
+        if (polygon.geometry.getType() === 'Polygon') {
             polygon.events.add(['optionschange', 'propertieschange'], this._onPolygonOptionsChangeHandler, this);
             polygon.events.add('parentchange', this._onPolygonParentChangeHandler, this);
         }
@@ -234,13 +234,13 @@ export default class PolylabelCollection extends PBase {
         nextTick(() => { // тк может произойти удаление объекта и optionschange тоже дернется
             const polygon = event.get('target');
             const label = this._getFromLabelState(polygon, 'label');
-    
+
             const curr = this._isPolygonParentChange.get(polygon);
             if (curr || !label) return;
-    
+
             label.setVisibilityForce('none');
             label.setLayoutTemplate();
-    
+
             this._calculatePolygonLabelData(polygon, true).then(label => {
                 this._setInLabelState(polygon, 'label', label);
                 this._analyzeAndSetLabelData(polygon, label);
@@ -260,12 +260,12 @@ export default class PolylabelCollection extends PBase {
             case 'add': {
                 const polygon = event.get('child');
                 this._calculateNewPolygon(polygon).then(label => {
-                    this._analyzeAndSetLabelData(polygon, label);                    
+                    this._analyzeAndSetLabelData(polygon, label);
                 });
                 break;
             }
             case 'remove': {
-                const polygon = event.get('child');                
+                const polygon = event.get('child');
                 this._deleteLabelStateListener(polygon);
                 const label = this._getFromLabelState(polygon, 'label');
                 if (label) label.destroy();

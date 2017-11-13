@@ -7,9 +7,8 @@ const template = templateLayoutFactory.createClass(`
             {% style %}text-align: center; font-size: {{options.labelTextSize}}px;
             color: {{options.labelTextColor}}; {% endstyle %}>
                 {% include options.labelTemplateLayout %}
-            </div>
-        </div>`
-        );
+        </div>
+    </div>`
+);
 
 export default template;
-

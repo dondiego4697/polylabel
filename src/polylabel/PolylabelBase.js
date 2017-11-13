@@ -20,7 +20,7 @@ export default class PolylabelBased {
             case 'boundschange': {
                 if (event.get('newZoom') !== event.get('oldZoom')) {
                     this._mapBoundsChangeCallback('boundschange');
-                } 
+                }
                 break;
             }
         }

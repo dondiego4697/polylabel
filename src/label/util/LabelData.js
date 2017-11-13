@@ -50,7 +50,8 @@ export default class LabelData {
     }
 
     getCenterCoords(zoom) {
-        return this.parsedOptions.labelCenterCoords && this.parsedOptions.labelCenterCoords[zoom] || this._data.autoCenter;
+        return this.parsedOptions.labelCenterCoords &&
+            this.parsedOptions.labelCenterCoords[zoom] || this._data.autoCenter;
     }
 
     getStyles(zoom) {
@@ -58,7 +59,7 @@ export default class LabelData {
             className: this.parsedOptions.labelClassName && this.parsedOptions.labelClassName[zoom],
             textSize: this.parsedOptions.labelTextSize && this.parsedOptions.labelTextSize[zoom],
             textColor: this.parsedOptions.labelTextColor && this.parsedOptions.labelTextColor[zoom]
-        }
+        };
     }
 
     getVisibility(zoom) {
@@ -76,7 +77,7 @@ export default class LabelData {
     }
 
     getSize(zoom, type) {
-        return this._data.zoomInfo[zoom][`${type}Size`];        
+        return this._data.zoomInfo[zoom][`${type}Size`];
     }
 
     setVisible(zoom, type, layout) {
@@ -100,7 +101,7 @@ export default class LabelData {
     }
 
     _init() {
-        const coordinates =  this._polygon instanceof GeoObject ?
+        const coordinates = this._polygon instanceof GeoObject ?
             this._polygon.geometry.getCoordinates() :
             this._polygon.geometry.coordinates;
 

@@ -8,7 +8,7 @@ import EventManager from 'event.Manager';
 
 export default class PolylabelObjectManager extends PBase {
     constructor(map, objectManager) {
-        super(map);    
+        super(map);
         this._map = map;
         this._polygonsObjectManager = objectManager;
         this._labelsObjectManager = new ObjectManager();
@@ -49,11 +49,11 @@ export default class PolylabelObjectManager extends PBase {
 
     _init() {
         this._map.geoObjects.add(this._labelsObjectManager);
-        this._initLabelsOverlaysListeners();        
+        this._initLabelsOverlaysListeners();
         this._initPolygonsObjectsListeners();
         this._initPolygonsListeners();
         this._initLabelsOMListeners();
-        
+
         this._calculatePolygons().then(() => this._initMapListeners());
     }
 
@@ -78,7 +78,7 @@ export default class PolylabelObjectManager extends PBase {
         const label = (isLabelCreated) ?
             this._getFromLabelState(polygon, 'label') :
             new Label(this._map, polygon, this._labelsObjectManager);
-        
+
         label.createLabelData(options, zoomRangeOptions);
         return Promise.resolve(label);
     }
@@ -114,12 +114,14 @@ export default class PolylabelObjectManager extends PBase {
                 ['dot', 'label'],
                 this._getFromLabelState(polygon, 'label'),
                 newValue
-            );            
+            );
         });
     }
 
     _initLabelsOverlaysListeners() {
-        this._labelsObjectManager.objects.overlays.events.add(['add', 'remove'], this._labelsOverlaysEventHandler, this);
+        this._labelsObjectManager.objects.overlays.events.add(
+            ['add', 'remove'], this._labelsOverlaysEventHandler, this
+        );
     }
 
     _getLabelType(labelId) {
@@ -224,10 +226,10 @@ export default class PolylabelObjectManager extends PBase {
     _calculateNewPolygon(polygon) {
         if (polygon.geometry.type === 'Polygon') {
             this._calculatePolygonLabelData(polygon).then(label => {
-                this._setInLabelState(polygon, 'label', label); 
-                this._initLabelStateListener(polygon);    
+                this._setInLabelState(polygon, 'label', label);
+                this._initLabelStateListener(polygon);
                 label.createPlacemarks();
-                label.addToObjectManager();                    
+                label.addToObjectManager();
             });
         }
     }
@@ -243,8 +245,8 @@ export default class PolylabelObjectManager extends PBase {
     _onPolygonOptionsChangeHandler(event) {
         const polygon = this._polygonsObjectManager.objects.getById(event.get('objectId'));
         if (!polygon) return;
-        
-        this._calculatePolygonLabelData(polygon, true).then(label => {            
+
+        this._calculatePolygonLabelData(polygon, true).then(label => {
             label.setVisibilityForce('none');
             this._setInLabelState(polygon, 'label', label);
 
@@ -266,8 +268,8 @@ export default class PolylabelObjectManager extends PBase {
 
                 const polygon = this._polygonsObjectManager.objects.getById(polygonId);
                 const label = this._labelsObjectManager.objects.getById(labelId);
-                if (label && label.options.pane === 'phantom' || !polygon) return false;   
-                
+                if (label && label.options.pane === 'phantom' || !polygon) return false;
+
                 this._polygonsObjectManager.events.fire(`label${type}`, {
                     objectId: polygonId,
                     type: `label${type}`
@@ -296,7 +298,9 @@ export default class PolylabelObjectManager extends PBase {
     }
 
     _deleteLabelsOverlaysListeners() {
-        this._labelsObjectManager.objects.overlays.events.remove(['add', 'remove'], this._labelsOverlaysEventHandler, this);        
+        this._labelsObjectManager.objects.overlays.events.remove(
+            ['add', 'remove'], this._labelsOverlaysEventHandler, this
+        );
     }
 
     _deletePolygonsListeners() {

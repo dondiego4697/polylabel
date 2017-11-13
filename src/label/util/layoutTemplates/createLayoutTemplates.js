@@ -12,7 +12,7 @@ export default function (labelLayout, labelDotLayout) {
             iconLabelTemplateLayout: templateLayoutFactory.createClass(labelLayout)
         },
         dot: {
-            iconLabelDotTemplateLayout: templateLayoutFactory.createClass(labelDotLayout || dotDefault)                
+            iconLabelDotTemplateLayout: templateLayoutFactory.createClass(labelDotLayout || dotDefault)
         }
-    }
+    };
 }

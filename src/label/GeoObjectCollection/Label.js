@@ -68,7 +68,7 @@ export default class Label {
             }
 
             return this.getLabelLayout(type).then(layout => {
-                this._layout[type] = layout;                                    
+                this._layout[type] = layout;
             });
         });
         return Promise.all(layouts);
@@ -126,7 +126,7 @@ export default class Label {
                     textColor: styles.textColor
                 });
             }
-            this.setVisibilityForce('none');            
+            this.setVisibilityForce('none');
             this._data.setVisible(zoom, type, this._layout[type]);
         });
 
@@ -149,7 +149,7 @@ export default class Label {
         return {
             currentVisibleType,
             currentConfiguredVisibileType: this._data.getVisibility(zoom)
-        }
+        };
     }
 
     setLayoutTemplate() {
@@ -157,7 +157,7 @@ export default class Label {
             this._polygon.options.get('labelLayout'),
             this._polygon.options.get('labelDotLayout')
         );
-        
+
         Object.keys(this._layoutTemplates).forEach(type => {
             this._placemark[type].options.set(this._layoutTemplates[type]);
         });
