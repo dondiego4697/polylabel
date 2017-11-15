@@ -28,19 +28,23 @@
         [
             "./builder/plugin-transform-ym-helpers",
             {
-                "helpersOverrides": {
+                "overrideHelpers": {
                     "inheritsLoose": "util.defineClass",
                     "inherits": "util.defineClass",
                     "extends": "util.extend"
                 },
-                "replace": {
+                "replaceGlobals": {
                     "Object.assign": "util.extend",
                     "Array.isArray": [
                         "util.array",
                         "isArray"
                     ],
                     "Object.keys": "util.objectKeys",
-                    "WeakMap": "util.WeakMap"
+                    "WeakMap": "util.WeakMap",
+                    "Promise": [
+                        "vow",
+                        "Promise"
+                    ]
                 }
             }
         ],
