@@ -1,6 +1,6 @@
-import calculateArea from 'util.calculateArea';
-import GeoObject from 'GeoObject';
-export default getPolylabelCenter;
+export default function (polygonCoords, precision, debug) {
+    return getPolesOfInaccessibility([polygonCoords], precision, debug);
+}
 
 function TinyQueue(data, compare) {
     if (!(this instanceof TinyQueue)) return new TinyQueue(data, compare);
@@ -97,8 +97,8 @@ function getPolesOfInaccessibility(polygon, precision, debug) {
     var maxX;
     var maxY;
 
-    for (var i = 0; i < polygon[0].length; i++) {
-        var p = polygon[0][i];
+    for (let i = 0; i < polygon[0].length; i++) {
+        const p = polygon[0][i];
         if (!i || p[0] < minX) minX = p[0];
         if (!i || p[1] < minY) minY = p[1];
         if (!i || p[0] > maxX) maxX = p[0];
@@ -237,40 +237,4 @@ function getSegDistSq(px, py, a, b) {
     dy = py - y;
 
     return dx * dx + dy * dy;
-}
-
-/**
- * Returns the optimal center from the polygon and the index of the largest.
- * @param {Array} polygonCoords - Polygon geometry.
- * @param {number} precision
- * @param {boolean} debug
- */
-function getPolylabelCenter(polygonCoords, precision, debug) {
-    if (typeof calculateArea === 'undefined') {
-        throw new Error('Didn\'t find calculateArea module');
-    }
-    let maxArea = Number.MIN_VALUE;
-    let indexOfMaxArea = 0;
-    let data;
-    if (polygonCoords.length > 1) {
-        for (let i = 0; i < polygonCoords.length; i++) {
-            let polygon = new GeoObject({
-                geometry: {
-                    type: 'Polygon', coordinates: [polygonCoords[i]]
-                }
-            });
-            let area = Math.round(calculateArea(polygon));
-            if (maxArea < area) {
-                maxArea = area;
-                indexOfMaxArea = i;
-            }
-        }
-        data = [polygonCoords[indexOfMaxArea]];
-    } else {
-        data = polygonCoords;
-    }
-    return {
-        center: getPolesOfInaccessibility(data, precision, debug),
-        index: indexOfMaxArea
-    };
 }

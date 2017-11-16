@@ -3,6 +3,8 @@ import parseZoomData from 'src.util.zoom.parseZoomData';
 import getPolylabelCenter from 'src.util.getPolesOfInaccessibility';
 import setZoomVisibility from 'src.util.zoom.setZoomVisibility';
 import GeoObject from 'GeoObject';
+import transformPolygonCoords from 'src.util.transformPolygonCoords';
+import getPolygonWithMaxArea from 'src.util.getPolygonWithMaxArea';
 
 const {
     MIN_ZOOM,
@@ -17,10 +19,10 @@ export default class LabelData {
         this._data = {
             zoomInfo: {}, // Объект с информацией для каждого зума
             autoCenter: [0, 0],
-            polygonIndex: 0,
             dotVisible: typeof options.labelDotVisible !== 'boolean' ? true : options.labelDotVisible
         };
         this.parsedOptions = LabelData._parseOptions(zoomRangeOptions);
+        this._maxAreaPolygonCoords = transformPolygonCoords(getPolygonWithMaxArea(this.getPolygonCoords()));
         this._init();
     }
 
@@ -45,8 +47,8 @@ export default class LabelData {
 
     getPolygonCoords() {
         return this._polygon instanceof GeoObject ?
-            this._polygon.geometry.getCoordinates()[this._data.polygonIndex] :
-            this._polygon.geometry.coordinates[this._data.polygonIndex];
+            this._polygon.geometry.getCoordinates() :
+            this._polygon.geometry.coordinates;
     }
 
     getCenterCoords(zoom) {
@@ -90,7 +92,7 @@ export default class LabelData {
             this._data.zoomInfo[zoom].visible,
             layout,
             this.getCenterCoords(zoom),
-            this.getPolygonCoords(),
+            this._maxAreaPolygonCoords,
             this.getOffset(zoom),
             this.getPermissibleInaccuracyOfVisibility(zoom)
         );
@@ -101,13 +103,8 @@ export default class LabelData {
     }
 
     _init() {
-        const coordinates = this._polygon instanceof GeoObject ?
-            this._polygon.geometry.getCoordinates() :
-            this._polygon.geometry.coordinates;
-
-        const autoCenterData = getPolylabelCenter(coordinates, 1.0);
-        this._data.autoCenter = autoCenterData.center;
-        this._data.polygonIndex = autoCenterData.index;
+        const autoCenter = getPolylabelCenter(this._maxAreaPolygonCoords, 1.0);
+        this._data.autoCenter = autoCenter;
 
         for (let z = MIN_ZOOM; z <= MAX_ZOOM; z++) {
             this._data.zoomInfo[z] = LabelData._createDefaultZoomInfo(z);
