@@ -22,7 +22,7 @@ export default class LabelData {
             dotVisible: typeof options.labelDotVisible !== 'boolean' ? true : options.labelDotVisible
         };
         this.parsedOptions = LabelData._parseOptions(zoomRangeOptions);
-        this._maxAreaPolygonCoords = transformPolygonCoords(getPolygonWithMaxArea(this.getPolygonCoords()));
+        this._polygonCoordsWithMaxArea = transformPolygonCoords.polygon(getPolygonWithMaxArea(this.getPolygonCoords()));
         this._init();
     }
 
@@ -91,8 +91,8 @@ export default class LabelData {
             zoom,
             this._data.zoomInfo[zoom].visible,
             layout,
-            this.getCenterCoords(zoom),
-            this._maxAreaPolygonCoords,
+            transformPolygonCoords.point(this.getCenterCoords(zoom)),
+            this._polygonCoordsWithMaxArea,
             this.getOffset(zoom),
             this.getPermissibleInaccuracyOfVisibility(zoom)
         );
@@ -103,7 +103,7 @@ export default class LabelData {
     }
 
     _init() {
-        const autoCenter = getPolylabelCenter(this._maxAreaPolygonCoords, 1.0);
+        const autoCenter = getPolylabelCenter(this._polygonCoordsWithMaxArea, 1.0);
         this._data.autoCenter = autoCenter;
 
         for (let z = MIN_ZOOM; z <= MAX_ZOOM; z++) {
