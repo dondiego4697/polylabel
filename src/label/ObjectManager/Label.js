@@ -2,6 +2,7 @@ import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
 import LabelData from 'src.label.util.LabelData';
 import getBaseLayoutTemplates from 'src.label.util.layoutTemplates.getBaseLayoutTemplates';
 import createLayoutTemplates from 'src.label.util.layoutTemplates.createLayoutTemplates';
+import classHelper from 'src.label.util.classHelper';
 
 /**
  * Класс подписи полигона для ObjectManager
@@ -55,10 +56,6 @@ export default class Label {
 
     _init() {
         this._baseLayoutTemplates = getBaseLayoutTemplates();
-        this._layoutTemplates = createLayoutTemplates(
-            this._polygon.options.labelLayout,
-            this._polygon.options.labelDotLayout
-        );
     }
 
     createPlacemarks() {
@@ -95,6 +92,14 @@ export default class Label {
         this._objectManager.objects.setObjectOptions(id, options);
     }
 
+    createLayoutTemplates() {
+        this._layoutTemplates = createLayoutTemplates(
+            this._polygon.options.labelLayout,
+            this._polygon.options.labelDotLayout,
+            this._data.getDotColorByPolygonColor()
+        );
+    }
+
     createLabelData(options, zoomRangeOptions) {
         this._data = new LabelData(this._polygon, options, zoomRangeOptions, this._map, this);
         return this._data;
@@ -109,10 +114,8 @@ export default class Label {
     }
 
     setLayoutTemplate() {
-        this._layoutTemplates = createLayoutTemplates(
-            this._polygon.options.labelLayout,
-            this._polygon.options.labelDotLayout
-        );
+        //TODO надо бы проверять, изменился ли он
+        this.createLayoutTemplates();
 
         Object.keys(this._layoutTemplates).forEach(type => {
             this._updateOptions(this._placemark[type].id, this._layoutTemplates[type]);
@@ -168,13 +171,13 @@ export default class Label {
     setCenterAndIconShape(type, size, offset) {
         const h = size.height / 2;
         const w = size.width / 2;
-
+        const dotDefaultShape = this._data.isDotDefault ? 2 : 0;
         this._updateOptions(this._placemark[type].id, {
             iconShape: {
                 type: 'Rectangle',
                 coordinates: [
-                    [-w + offset[0], -h + offset[1]],
-                    [w + offset[0], h + offset[1]]
+                    [-w + offset[0] - dotDefaultShape, -h + offset[1] - dotDefaultShape],
+                    [w + offset[0] + dotDefaultShape, h + offset[1] + dotDefaultShape]
                 ]
             },
             iconLabelLeft: -w + offset[0],
@@ -225,5 +228,13 @@ export default class Label {
         this._placemark[type] = Object.assign({}, this._placemark[type]);
         const id = this._placemark[type].id;
         this._placemark[type].id = id[0] === '_' ? id.slice(1) : `_${id}`;
+    }
+
+    addDotClass(className) {
+        classHelper.add(this._layout.dot, 'ymaps-polylabel-dot-default', className);
+    }
+
+    removeDotClass(className) {
+        classHelper.remove(this._layout.dot, 'ymaps-polylabel-dot-default', className);
     }
 }

@@ -3,6 +3,7 @@ import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
 import LabelData from 'src.label.util.LabelData';
 import getBaseLayoutTemplates from 'src.label.util.layoutTemplates.getBaseLayoutTemplates';
 import createLayoutTemplates from 'src.label.util.layoutTemplates.createLayoutTemplates';
+import classHelper from 'src.label.util.classHelper';
 
 /**
  * Класс подписи полигона для геоколлекции
@@ -81,10 +82,6 @@ export default class Label {
 
     _init() {
         this._baseLayoutTemplates = getBaseLayoutTemplates();
-        this._layoutTemplates = createLayoutTemplates(
-            this._polygon.options.get('labelLayout'),
-            this._polygon.options.get('labelDotLayout')
-        );
     }
 
     createPlacemarks() {
@@ -105,6 +102,14 @@ export default class Label {
             iconLabelPosition: 'absolute'
         }, params.options);
         return new Placemark([0, 0], params.properties, options);
+    }
+
+    createLayoutTemplates() {
+        this._layoutTemplates = createLayoutTemplates(
+            this._polygon.options.get('labelLayout'),
+            this._polygon.options.get('labelDotLayout'),
+            this._data.getDotColorByPolygonColor()
+        );
     }
 
     createLabelData(options, zoomRangeOptions) {
@@ -153,10 +158,7 @@ export default class Label {
     }
 
     setLayoutTemplate() {
-        this._layoutTemplates = createLayoutTemplates(
-            this._polygon.options.get('labelLayout'),
-            this._polygon.options.get('labelDotLayout')
-        );
+        this.createLayoutTemplates();
 
         Object.keys(this._layoutTemplates).forEach(type => {
             this._placemark[type].options.set(this._layoutTemplates[type]);
@@ -219,18 +221,26 @@ export default class Label {
     setCenterAndIconShape(type, size, offset) {
         const h = size.height / 2;
         const w = size.width / 2;
-
+        const dotDefaultShape = this._data.isDotDefault ? 2 : 0;
         this._placemark[type].options.set({
             iconShape: {
                 type: 'Rectangle',
                 coordinates: [
-                    [-w + offset[0], -h + offset[1]],
-                    [w + offset[0], h + offset[1]]
+                    [-w + offset[0] - dotDefaultShape, -h + offset[1] - dotDefaultShape],
+                    [w + offset[0] + dotDefaultShape, h + offset[1] + dotDefaultShape]
                 ]
             },
             iconLabelLeft: -w + offset[0],
             iconLabelTop: -h + offset[1]
         });
+    }
+
+    addDotClass(className) {
+        classHelper.add(this._layout.dot, 'ymaps-polylabel-dot-default', className);
+    }
+
+    removeDotClass(className) {
+        classHelper.remove(this._layout.dot, 'ymaps-polylabel-dot-default', className);
     }
 
     destroy() {

@@ -1,12 +1,11 @@
 import templateLayoutFactory from 'templateLayoutFactory';
 
-const dotDefault = `<div {% style %}background-color: red;
-width: 10px; height: 10px; border-radius: 50px;{% endstyle %}></div>`;
-
 /**
  * Создает пользовательские шаблоны
  */
-export default function (labelLayout, labelDotLayout) {
+export default function (labelLayout, labelDotLayout, polygonColor) {
+    const dotDefault = `<div {% style %}background-color: ${polygonColor}; {% endstyle %}
+        class="ymaps-polylabel-dot-default"></div>`;
     return {
         label: {
             iconLabelTemplateLayout: templateLayoutFactory.createClass(labelLayout)

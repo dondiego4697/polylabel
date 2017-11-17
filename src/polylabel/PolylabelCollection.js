@@ -112,8 +112,9 @@ export default class PolylabelCollection extends PBase {
         const label = (isLabelCreated) ?
             this._getFromLabelState(polygon, 'label') :
             new Label(this._map, polygon, this._labelsCollection);
-        label.createLabelData(options, zoomRangeOptions);
 
+        label.createLabelData(options, zoomRangeOptions);
+        label.createLayoutTemplates();
         return Promise.resolve(label);
     }
 
@@ -279,17 +280,27 @@ export default class PolylabelCollection extends PBase {
      */
     _initLabelCollectionListeners() {
         const controller = {
-            onBeforeEventFiring: function (events, type, event) {
+            onBeforeEventFiring: (events, type, event) => {
                 if (event.get('target').options.get('pane') === 'phantom') return false;
 
                 let polygon = event.get('target').properties.get('polygon');
-                if (polygon) {
-                    let newEvent = new Event({
-                        target: polygon,
-                        type: `label${type}`
-                    }, event);
-                    polygon.events.fire(`label${type}`, newEvent);
+                if (!polygon) return false;
+
+                if (type === 'mouseenter' || type === 'mouseleave') {
+                    const labelInst = this._getFromLabelState(polygon, 'label');
+                    if (labelInst && labelInst.getLabelData().isDotDefault) {
+                        type === 'mouseenter' ?
+                            labelInst.addDotClass('ymaps-polylabel-dot-default_hover') :
+                            labelInst.removeDotClass('ymaps-polylabel-dot-default_hover');
+                    }
                 }
+
+                let newEvent = new Event({
+                    target: polygon,
+                    type: `label${type}`
+                }, event);
+
+                polygon.events.fire(`label${type}`, newEvent);
                 return false;
             }
         };

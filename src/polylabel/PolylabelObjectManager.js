@@ -80,6 +80,7 @@ export default class PolylabelObjectManager extends PBase {
             new Label(this._map, polygon, this._labelsObjectManager);
 
         label.createLabelData(options, zoomRangeOptions);
+        label.createLayoutTemplates();
         return Promise.resolve(label);
     }
 
@@ -188,9 +189,9 @@ export default class PolylabelObjectManager extends PBase {
         if (labelState) return labelState.get(key);
     }
 
-    _clearVisibilityInLabelsState() {
+    _clearVisibilityInLabelsState(value) {
         this._polygonsObjectManager.objects.each(polygon => {
-            this._setInLabelState(polygon, 'visible', undefined);
+            this._setInLabelState(polygon, 'visible', value);
         });
     }
 
@@ -269,6 +270,15 @@ export default class PolylabelObjectManager extends PBase {
                 const polygon = this._polygonsObjectManager.objects.getById(polygonId);
                 const label = this._labelsObjectManager.objects.getById(labelId);
                 if (label && label.options.pane === 'phantom' || !polygon) return false;
+
+                if (type === 'mouseenter' || type === 'mouseleave') {
+                    const labelInst = this._getFromLabelState(polygon, 'label');
+                    if (labelInst && labelInst.getLabelData().isDotDefault) {
+                        type === 'mouseenter' ?
+                            labelInst.addDotClass('ymaps-polylabel-dot-default_hover') :
+                            labelInst.removeDotClass('ymaps-polylabel-dot-default_hover');
+                    }
+                }
 
                 this._polygonsObjectManager.events.fire(`label${type}`, {
                     objectId: polygonId,

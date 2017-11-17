@@ -8,7 +8,8 @@ import getPolygonWithMaxArea from 'src.util.getPolygonWithMaxArea';
 
 const {
     MIN_ZOOM,
-    MAX_ZOOM
+    MAX_ZOOM,
+    DEFAULT_POLYGON_FILL_COLOR
 } = CONFIG;
 
 export default class LabelData {
@@ -23,6 +24,7 @@ export default class LabelData {
         };
         this.parsedOptions = LabelData._parseOptions(zoomRangeOptions);
         this._polygonCoordsWithMaxArea = transformPolygonCoords.polygon(getPolygonWithMaxArea(this.getPolygonCoords()));
+        this.updateDotDefaultFlag();
         this._init();
     }
 
@@ -64,6 +66,40 @@ export default class LabelData {
         };
     }
 
+    getPolygonFillColor() {
+        const color = this._polygon instanceof GeoObject ?
+            this._polygon.options.get('fillColor') :
+            this._polygon.options.fillColor;
+        return color || DEFAULT_POLYGON_FILL_COLOR;
+    }
+
+    getDotColorByPolygonColor() {
+        let color = this.getPolygonFillColor();
+        let checkColor = this._transformHexToRGB(color, 0.9);
+        if (checkColor) color = checkColor;
+        return color;
+    }
+
+    _transformHexToRGB(hex, opacity) {
+        hex = hex[0] !== '#' ? `#${hex}` : hex;
+        hex = hex.slice(0, 7);
+        let c;
+        if (!/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) return;
+
+        c = hex.substring(1).split('');
+        if(c.length === 3){
+            c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c = '0x' + c.join('');
+        return `rgba(${[ (c>>16)&255, (c>>8)&255, c&255].join(',')}, ${opacity || 1})`;
+    }
+
+    getPolygonOptions() {
+        return this._polygon instanceof GeoObject ?
+            this._polygon.options.getAll() :
+            this._polygon.options;
+    }
+
     getVisibility(zoom) {
         return this.parsedOptions.labelForceVisible && this.parsedOptions.labelForceVisible[zoom] ||
             this._data.zoomInfo[zoom].visible;
@@ -71,6 +107,10 @@ export default class LabelData {
 
     getOffset(zoom) {
         return this.parsedOptions.labelOffset && this.parsedOptions.labelOffset[zoom] || [0, 0];
+    }
+
+    updateDotDefaultFlag() {
+        this.isDotDefault = this.getPolygonOptions().labelDotLayout ? false : true;
     }
 
     getPermissibleInaccuracyOfVisibility(zoom) {
