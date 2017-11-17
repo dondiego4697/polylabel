@@ -91,8 +91,8 @@ export default class LabelData {
             zoom,
             this._data.zoomInfo[zoom].visible,
             layout,
-            transformPolygonCoords.point(this.getCenterCoords(zoom)),
-            this._polygonCoordsWithMaxArea,
+            transformPolygonCoords.point(this.getCenterCoords(zoom), this._polygonCoordsWithMaxArea.isPositivePart),
+            this._polygonCoordsWithMaxArea.coords,
             this.getOffset(zoom),
             this.getPermissibleInaccuracyOfVisibility(zoom)
         );
@@ -103,7 +103,7 @@ export default class LabelData {
     }
 
     _init() {
-        const autoCenter = getPolylabelCenter(this._polygonCoordsWithMaxArea, 1.0);
+        const autoCenter = getPolylabelCenter(this._polygonCoordsWithMaxArea.coords, 1.0);
         this._data.autoCenter = autoCenter;
 
         for (let z = MIN_ZOOM; z <= MAX_ZOOM; z++) {

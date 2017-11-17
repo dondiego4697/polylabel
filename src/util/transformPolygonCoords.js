@@ -3,37 +3,48 @@ const methods = {
     point: point
 };
 
-function point(coords) {
-    return polygon([coords, coords])[1];
+function point(coords, isPositivePart) {
+    const key = getKey(coords);
+    return transformPoint(isPositivePart, key, coords);
 }
 
 function polygon(coords) {
     let result = [];
     let isPositivePart = true; // true = positive, false = negative
     for (let i = 0; i < coords.length; i++) {
-        const p = coords[i];
+        const pointCoords = coords[i];
         if (i === 0) {
-            isPositivePart = p[1] >= 0 ? true : false;
+            isPositivePart = pointCoords[1] >= 0 ? true : false;
         }
-
-        const arr = [
-            {
-                key: '180',
-                distance: 180 - p[1]
-            },
-            {
-                key: '-180',
-                distance: Math.abs(-180 - p[1])
-            },
-            {
-                key: '0',
-                distance: Math.abs(p[1])
-            }
-        ];
-        const key = arr.sort(comparator)[0].key;
-        result.push(isPositivePart ? transformPositive(key, p) : transformNegative(key, p));
+        const key = getKey(pointCoords);
+        result.push(transformPoint(isPositivePart, key, pointCoords));
     }
-    return result;
+    return {
+        coords: result,
+        isPositivePart
+    };
+}
+
+function transformPoint(isPositivePart, key, pointCoords) {
+    return isPositivePart ? transformPositive(key, pointCoords) : transformNegative(key, pointCoords)
+}
+
+function getKey(p) {
+    const arr = [
+        {
+            key: '180',
+            distance: 180 - p[1]
+        },
+        {
+            key: '-180',
+            distance: Math.abs(-180 - p[1])
+        },
+        {
+            key: '0',
+            distance: Math.abs(p[1])
+        }
+    ];
+    return arr.sort(comparator)[0].key;
 }
 
 function transformPositive(key, point) {
