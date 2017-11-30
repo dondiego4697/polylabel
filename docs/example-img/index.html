@@ -65,14 +65,14 @@
                 const objectManager = new ymaps.ObjectManager();
                 let i = 0;
                 const HintLayout = ymaps.templateLayoutFactory.createClass(
-                        '<img src="/docs/res/gerbs/{{properties.hintContent}}.png" height="50px"/>'
+                        '<img src="/polylabel/docs/res/gerbs/{{properties.hintContent}}.png" height="50px"/>'
                     );
                 objectManager.objects.options.set({
                     hintContentLayout: HintLayout
                 });
                 result.geoObjects.each(polygon => {
                     polygon.options.set(Object.assign({}, polygon.options.getAll(), {
-                        labelLayout: '<img src="/docs/res/gerbs/{{properties.hintContent}}.png" height="50px"/>',
+                        labelLayout: '<img src="/polylabel/docs/res/gerbs/{{properties.hintContent}}.png" height="50px"/>',
                         fillColor: 'rgba(27, 125, 190, 0.7)',
                         strokeColor: 'rgba(255, 255, 255, 0.8)',
                         openHintOnHover: false,
