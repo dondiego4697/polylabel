@@ -47,6 +47,7 @@
                 properties: geoObject.properties.getAll()
             }
         }
+
         ymaps.ready(['util.createPolylabel']).then(function () {
             window.map = new ymaps.Map('map', {
                 center: [62, 89],
@@ -58,7 +59,7 @@
                 searchControlProvider: 'yandex#search'
             });
             ymaps.regions.load('RU', {
-                lang: 'ru',
+                lang: 'en',
                 quality: 2
             }).then(function (result) {
                 const objectManager = new ymaps.ObjectManager();
