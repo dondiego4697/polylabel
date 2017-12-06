@@ -68,9 +68,9 @@ polygon - объект, описывающий полигон
 ## События
 Все события с подписей могут прослушиваться через полигон.  
 Список событий можно посмотреть у 
-[геобъекта](https://tech.yandex.ru/maps/doc/jsapi/2.1/ref/reference/GeoObject-docpage/#events-summary)  
+[геобъекта](https://tech.yandex.ru/maps/doc/jsapi/2.1/ref/reference/GeoObject-docpage/#events-summary).  
 Чтобы повесить слушатель, нужно в 
-[EventManager](https://tech.yandex.ru/maps/doc/jsapi/2.1/ref/reference/event.Manager-docpage/) Геоколлекции или ObjectManager-а добавить слушатель нужного события с префиксом "label"  
+[EventManager](https://tech.yandex.ru/maps/doc/jsapi/2.1/ref/reference/event.Manager-docpage/) Геоколлекции или ObjectManager-а добавить слушатель нужного события с префиксом "label".  
 
 ```js
     // В данном примере мы прослушиваем наведедение курсора на подпись и выход курсора за пределы подписи
