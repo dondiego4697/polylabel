@@ -26,8 +26,25 @@ function initStyles() {
             text-align: center;
         }
         .ymaps-polylabel-dark-label {
-            color: rgba(51, 51, 51, 1);
-            text-shadow: 0 0 1px white, 0 0 2px white;
+            color: #06264f;
+            text-shadow:
+            0 -1px 0 rgba( 255, 255, 255, 0.4 ),
+            0 -1px 0 rgba( 255, 255, 255, 0.4 ),
+            0 1px 0 rgba( 255, 255, 255, 0.4 ),
+            0 1px 0 rgba( 255, 255, 255, 0.4 ),
+            -1px 0 0 rgba( 255, 255, 255, 0.4 ),
+            1px 0 0 rgba( 255, 255, 255, 0.4 ),
+            -1px 0 0 rgba( 255, 255, 255, 0.4 ),
+            1px 0 0 rgba( 255, 255, 255, 0.4 ),
+            -1px -1px 0 rgba( 255, 255, 255, 0.4 ),
+            1px -1px 0 rgba( 255, 255, 255, 0.4 ),
+            -1px 1px 0 rgba( 255, 255, 255, 0.4 ),
+            1px 1px 0 rgba( 255, 255, 255, 0.4 ),
+            -1px -1px 0 rgba( 255, 255, 255, 0.4 ),
+            1px -1px 0 rgba( 255, 255, 255, 0.4 ),
+            -1px 1px 0 rgba( 255, 255, 255, 0.4 ),
+            1px 1px 0 rgba( 255, 255, 255, 0.4 );
+            opacity: 0.9;
         }
         .ymaps-polylabel-light-label {
             color: rgba(255, 255, 255, 1);

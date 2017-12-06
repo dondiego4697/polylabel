@@ -49,12 +49,12 @@
         }
         ymaps.ready(['util.createPolylabel']).then(function () {
             window.map = new ymaps.Map('map', {
-                center: [62, 89],
-                zoom: 3,
+                center: [62, 100],
+                zoom: 4,
                 controls: ['searchControl', 'zoomControl']
             }, {
                 maxZoom: 18,
-                minZoom: 3,
+                minZoom: 4,
                 searchControlProvider: 'yandex#search'
             });
             ymaps.regions.load('RU', {
@@ -65,6 +65,7 @@
                 let i = 0;
                 result.geoObjects.each(polygon => {
                     polygon.options.set(Object.assign({}, polygon.options.getAll(), {
+                        labelDefaults: 'dark',
                         labelLayout: '<div>{{properties.hintContent}}</div>',
                         fillColor: 'rgba(27, 125, 190, 0.7)',
                         strokeColor: 'rgba(255, 255, 255, 0.8)',
@@ -73,6 +74,12 @@
                         labelClassName: 'label-custom',
                         labelPermissibleInaccuracyOfVisibility: 4
                     }));
+                    if (polygon.properties.get('hintContent') === 'Вологодская область') {
+                        polygon.options.set('labelCenterCoords', [59.843133, 39.818510]);
+                    }
+                    if (polygon.properties.get('hintContent') === 'Мордовия') {
+                        polygon.options.set('labelCenterCoords', [54.305451, 44.035049]);
+                    }
                     objectManager.add(transformGOToJSON(polygon, i));
                     i++;
                 });

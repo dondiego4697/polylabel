@@ -1,5 +1,6 @@
 export default function (hex, opacity) {
     if (!hex) return;
+    if (hex.indexOf('rgb') !== -1) return hex;
     hex = hex[0] !== '#' ? `#${hex}` : hex;
     hex = hex.slice(0, 7);
     let c;

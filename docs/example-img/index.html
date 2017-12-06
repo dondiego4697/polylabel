@@ -50,12 +50,12 @@
 
         ymaps.ready(['util.createPolylabel']).then(function () {
             window.map = new ymaps.Map('map', {
-                center: [62, 89],
-                zoom: 3,
+                center: [62, 100],
+                zoom: 4,
                 controls: ['searchControl', 'zoomControl']
             }, {
                 maxZoom: 18,
-                minZoom: 3,
+                minZoom: 4,
                 searchControlProvider: 'yandex#search'
             });
             ymaps.regions.load('RU', {
@@ -78,6 +78,12 @@
                         openHintOnHover: false,
                         labelPermissibleInaccuracyOfVisibility: 0
                     }));
+                    if (polygon.properties.get('hintContent') === 'Vologda Oblast') {
+                        polygon.options.set('labelCenterCoords', [59.843133, 39.818510]);
+                    }
+                    if (polygon.properties.get('hintContent') === 'Mordovia') {
+                        polygon.options.set('labelCenterCoords', [54.305451, 44.035049]);
+                    }
                     objectManager.add(transformGOToJSON(polygon, i));
                     i++;
                 });
