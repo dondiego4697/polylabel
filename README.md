@@ -8,4 +8,4 @@
 [Пример1](https://dondiego4697.github.io/polylabel/docs/example-text/)  
 [Пример2](https://dondiego4697.github.io/polylabel/docs/example-img/)  
 
-Чтобы данный модуль работал, на вашем сайте должно быть подключено JS API Яндекс.Карт и этот [внешний модуль](https://github.com/yandex/mapsapi-area)
+Чтобы модуль заработал, на вашем сайте должны быть подключены JS API Яндекс.Карт и этот [внешний модуль](https://github.com/yandex/mapsapi-area)
