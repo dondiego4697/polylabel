@@ -72,7 +72,7 @@ export default class Label extends LabelBase {
                 properties: Object.assign({}, {
                     polygon: this._polygon
                 }, this._polygon.properties.getAll()),
-                options: Object.assign({}, this._polygon.options.getAll(), this._layoutTemplates[type])
+                options: this.getFormedOptionsForPlacemark(type)
             }, this._baseLayoutTemplates[type], this._data.getCenterCoords(this._map.getZoom()));
         });
     }

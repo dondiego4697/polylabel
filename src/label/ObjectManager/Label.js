@@ -55,7 +55,7 @@ export default class Label extends LabelBase {
                 properties: Object.assign({}, {
                     polygon: this._polygon
                 }, this._polygon.properties),
-                options: Object.assign({}, this._polygon.options, this._layoutTemplates[type])
+                options: this.getFormedOptionsForPlacemark(type)
             }, this._baseLayoutTemplates[type], this._data.getCenterCoords(this._map.getZoom()));
         });
     }
@@ -89,9 +89,12 @@ export default class Label extends LabelBase {
         });
     }
 
-    setNewOptions(newOptions) {
-        ['dot', 'label'].forEach((type) => {
-            Object.assign(this._placemark[type].options, newOptions);
+    /**
+     * Обновляет все возможные опции в подписи
+     */
+    updateOptions() {
+        ['dot', 'label'].forEach(type => {
+            Object.assign(this._placemark[type].options, this.getFormedOptionsForPlacemark(type));
             this._updateOptions(
                 this._placemark[type].id,
                 this._placemark[type].options

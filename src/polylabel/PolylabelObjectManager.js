@@ -231,7 +231,7 @@ export default class PolylabelObjectManager extends PBase {
             this._labelsState.set(polygon, 'label', label);
 
             label.setLayoutTemplate();
-            label.setNewOptions(polygon.options);
+            label.updateOptions();
 
             this._setLabelData(polygon, ['dot', 'label'], this._labelsState.get(polygon, 'label'));
         });

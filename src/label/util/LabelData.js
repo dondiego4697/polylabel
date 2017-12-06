@@ -58,6 +58,22 @@ export default class LabelData {
             this._polygon.geometry.coordinates;
     }
 
+    getLabelCursors() {
+        const DEFAULT = 'grab'
+        const result = {
+            dot: {},
+            label: {}
+        }
+        if (this._label.getPolylabelType() === 'collection') {
+            result.label.cursor = this._polygon.options.get('labelCursor') || DEFAULT;
+            result.dot.cursor = this._polygon.options.get('labelDotCursor') || DEFAULT;
+        } else {
+            result.label.cursor = this._polygon.options.labelCursor || DEFAULT;
+            result.dot.cursor = this._polygon.options.labelDotCursor || DEFAULT;
+        }
+        return result;
+    }
+
     getLabelDefaults(zoom) {
         const defaults = this._label.getPolylabelType() === 'collection' ?
             this._polygon.options.get('labelDefaults') :

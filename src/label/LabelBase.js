@@ -58,6 +58,19 @@ export default class LabelBase {
     }
 
     /**
+     * Формирует все нужные опции для подписи (из полигона, необходимые распарсенные данные и тп)
+     */
+    getFormedOptionsForPlacemark(type) {
+        const cursors = this._data.getLabelCursors();
+        return Object.assign(
+                {},
+                this.getPolygonOptions(),
+                this._layoutTemplates[type],
+                cursors[type]
+            );
+    }
+
+    /**
      * Создаем шаблоны, которые потом будут инклудиться в базовый
      */
     createLayoutTemplates() {

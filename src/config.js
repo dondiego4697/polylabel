@@ -6,7 +6,9 @@ export default {
         'labelLayout',
         'labelDotLayout',
         'labelDotVisible',
-        'labelDefaults'
+        'labelDefaults',
+        'labelCursor',
+        'labelDotCursor'
     ],
     zoomRangeOptions: [
         'labelClassName',
