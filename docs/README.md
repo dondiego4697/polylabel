@@ -73,8 +73,10 @@ polygon - объект, описывающий полигон
 ---------------------------------------- | --------------------------------------------------------|------------------------|
 | labelLayout *                          | string                                                  |     -                  |
 | labelDotLayout                         | string                                                  |   стандартная точка    |
-| labelDotVisible                        | boolean                                                 |    true                |
+| labelDotVisible                        | boolean                                                 |   true                 |
 | labelDefaults                          | string                                                  |     -                  |
+| labelCursor                            | string                                                  |   'grab'               |
+| labelDotCursor                         | string                                                  |   'grab'               |
 | labelClassName                         | ZoomRange < string > \|\| string                        |     -                  |
 | labelForceVisible                      | ZoomRange < string > \|\| string                        |     -                  |
 | labelTextColor                         | ZoomRange < string > \|\| string                        |     -                  |
@@ -139,6 +141,14 @@ polygon - объект, описывающий полигон
 ***Может принимать два значения:***
 - ***dark*** - для темных подписей
 - ***light*** - для светлых подписей
+
+### labelCursor
+Вид курсора при наведении на основную подпись.
+[Возможные значения](https://tech.yandex.ru/maps/doc/jsapi/2.1/ref/reference/util.cursor.Manager-docpage/#push-param-key)
+
+### labelDotCursor
+Вид курсора при наведении на точку.
+[Возможные значения](https://tech.yandex.ru/maps/doc/jsapi/2.1/ref/reference/util.cursor.Manager-docpage/#push-param-key)
 
 ### labelClassName
 Название css-класса, применяемого к подписи.
