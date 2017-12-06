@@ -285,7 +285,7 @@ export default class PolylabelCollection extends PBase {
 
     _initMapListeners() {
         this.initMapListeners((type) => {
-            if (type === 'boundschange') {
+            if (type === 'actionendzoomchange') {
                 this._clearVisibilityInLabelsState();
                 this._calculatePolygons();
             } else if (type === 'actionbeginzoomchange') {

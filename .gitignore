@@ -3,3 +3,4 @@ build
 cases/
 .idea
 polylabel/
+npm-debug.log

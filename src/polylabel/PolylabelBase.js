@@ -1,5 +1,4 @@
 import CONFIG from 'src.config';
-import GeoObject from 'GeoObject';
 import templateFiltersStorage from 'template.filtersStorage';
 import dotColorFilterStorage from 'src.util.templateFilterStorage.dotColor';
 
@@ -15,36 +14,39 @@ export default class PolylabelBased {
 
     initMapListeners(callback) {
         this._mapCallback = callback;
-        this._map.events.add(['boundschange', 'actionbegin'], this._mapEventsHandler, this);
+        this._map.events.add(['boundschange', 'actionbegin', 'actionend'], this._mapEventsHandler, this);
     }
 
     destroyMapListeners() {
-        this._map.events.remove(['boundschange', 'actionbegin'], this._mapEventsHandler, this);
+        this._map.events.remove(['boundschange', 'actionbegin', 'actionend'], this._mapEventsHandler, this);
     }
 
     _mapEventsHandler(event) {
         switch (event.get('type')) {
-            case 'boundschange': {
-                if (event.get('newZoom') !== event.get('oldZoom')) {
-                    this._mapCallback('boundschange');
-                }
-                break;
-            }
             case 'actionbegin': {
                 const action = event.originalEvent.action;
-                action.events.once('tick', this._actionContinuousTickHandler, this);
+                action.events.add('tick', this._actionTickHandler, this);
+                break;
+            }
+            case 'actionend': {
+                const action = event.originalEvent.action;
+                action.events.remove('tick', this._actionTickHandler, this);
+
+                if (this._zoomed) {
+                    this._mapCallback('actionendzoomchange');
+                    this._zoomed = false;
+                }
                 break;
             }
         }
     }
 
-    _actionContinuousTickHandler(event) {
-        const action = event.get('target');
+    _actionTickHandler(event) {
         const tick = event.get('tick');
         if (tick.zoom !== this._map.getZoom()) {
-            this._mapCallback('actionbeginzoomchange');
+            if (!this._zoomed) this._mapCallback('actionbeginzoomchange');
+            this._zoomed = true;
         }
-        action.events.remove('tick', this._actionContinuousTickHandler, this);
     }
 
     //Возвращает все опции полигона
@@ -72,13 +74,13 @@ export default class PolylabelBased {
         }, {});
     }
 
-     //Возвращает свойства, которые необходимы для создания подписи
+    //Возвращает свойства, которые необходимы для создания подписи
     getConfigProperties(polygon) {
         return CONFIG.properties.reduce((result, key) => {
             result[key] = this.getPolylabelType() === 'collection' ?
                 polygon.properties.get(key) :
                 polygon.properties[key];
-                return result;
+            return result;
         }, {});
     }
 }

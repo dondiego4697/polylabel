@@ -65,6 +65,23 @@ polygon - объект, описывающий полигон
     state.set('visible', 'dot');
 ```
 
+## События
+Все события с подписей могут прослушиваться через полигон.  
+Список событий можно посмотреть у [геобъекта] (https://tech.yandex.ru/maps/doc/jsapi/2.1/ref/reference/GeoObject-docpage/#events-summary)  
+Чтобы повесить слушатель, нужно в [EventManager](https://tech.yandex.ru/maps/doc/jsapi/2.1/ref/reference/event.Manager-docpage/) Геоколлекции или ObjectManager-а добавить слушатель нужного события с префиксом "label"  
+
+```js
+    // В данном примере мы прослушиваем наведедение курсора на подпись и выход курсора за пределы подписи
+    // По полигону, на подписи которого было отработано событие, получаем состояние подписи
+    // Меняем состояние видимости подписи в зависимости от типа события
+    geoObjectCollection.events.add(['labelmouseenter', 'labelmouseleave'], event => {
+        var polygon = event.get('target');
+        var state = polyLabeler.getLabelState(polygon);
+        state.set('visible', event.get('type') === 'labelmouseleave' ? undefined : 'label');
+    });
+```
+
+
 ## Опции полигона
 ### Управление подписью происходит через опции полигона.  
 ***\* - обязательная опция***</br>

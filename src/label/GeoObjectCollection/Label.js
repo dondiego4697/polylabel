@@ -110,7 +110,7 @@ export default class Label extends LabelBase {
         if (['label', 'dot'].indexOf(currentVisibleType) !== -1 &&
             this._data.getSize(zoom, currentVisibleType)) {
             this.setCoordinates(currentCenter);
-            this.setCenterAndIconShape(
+            this.setOffsetAndIconShape(
                 currentVisibleType,
                 this._data.getSize(zoom, currentVisibleType),
                 this._data.getOffset(zoom)
@@ -170,7 +170,7 @@ export default class Label extends LabelBase {
     /**
      * Центрирует подпись и создает ей правильный iconShape
      */
-    setCenterAndIconShape(type, size, offset) {
+    setOffsetAndIconShape(type, size, offset) {
         const offsetResult = this.analyseOffset(size, offset);
         this._placemark[type].options.set({
             iconShape: this.analyseShape(type, size, offset),

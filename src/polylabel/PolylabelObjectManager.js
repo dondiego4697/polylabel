@@ -174,7 +174,7 @@ export default class PolylabelObjectManager extends PBase {
 
     _initMapListeners() {
         this.initMapListeners(type => {
-            if (type === 'boundschange') {
+            if (type === 'actionendzoomchange') {
                 this._clearVisibilityInLabelsState();
             } else if (type === 'actionbeginzoomchange') {
                 this._clearVisibilityInLabelsState('none');

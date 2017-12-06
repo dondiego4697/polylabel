@@ -59,11 +59,11 @@ export default class LabelData {
     }
 
     getLabelCursors() {
-        const DEFAULT = 'grab'
+        const DEFAULT = 'grab';
         const result = {
             dot: {},
             label: {}
-        }
+        };
         if (this._label.getPolylabelType() === 'collection') {
             result.label.cursor = this._polygon.options.get('labelCursor') || DEFAULT;
             result.dot.cursor = this._polygon.options.get('labelDotCursor') || DEFAULT;

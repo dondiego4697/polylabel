@@ -34,7 +34,7 @@ export default class LabelBase {
                 if (img.complete) {
                     return Promise.resolve();
                 }
-                return new Promise(resolve => { img.onload = resolve; });
+                return new Promise(resolve => img.onload = resolve);
             }));
             imagesLoaded.then(() => {
                 const size = getLayoutSize(layout);
@@ -63,11 +63,11 @@ export default class LabelBase {
     getFormedOptionsForPlacemark(type) {
         const cursors = this._data.getLabelCursors();
         return Object.assign(
-                {},
-                this.getPolygonOptions(),
-                this._layoutTemplates[type],
-                cursors[type]
-            );
+            {},
+            this.getPolygonOptions(),
+            this._layoutTemplates[type],
+            cursors[type]
+        );
     }
 
     /**
@@ -95,9 +95,7 @@ export default class LabelBase {
      */
     analyseVisibility(visibleState, visible, dotVisible) {
         let currState = visibleState && visibleState !== 'auto' ? visibleState : visible;
-        if (currState === 'dot' && !dotVisible) {
-            currState = 'none';
-        }
+        if (currState === 'dot' && !dotVisible) currState = 'none';
         return currState;
     }
 
