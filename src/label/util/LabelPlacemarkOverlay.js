@@ -1,5 +1,5 @@
-import overlayPlacemark from 'overlay.Placemark';
-import GeoObject from 'GeoObject';
+import overlayPlacemark from 'api/overlay.Placemark';
+import GeoObject from 'api/GeoObject';
 
 /**
  * Прокидывает данные в подпись из полигона

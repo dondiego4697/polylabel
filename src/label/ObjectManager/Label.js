@@ -1,6 +1,6 @@
-import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
-import getBaseLayoutTemplates from 'src.label.util.layoutTemplates.getBaseLayoutTemplates';
-import LabelBase from 'src.label.LabelBase';
+import LabelPlacemarkOverlay from '../util/LabelPlacemarkOverlay';
+import getBaseLayoutTemplates from '../util/layoutTemplates/getBaseLayoutTemplates';
+import LabelBase from '../LabelBase';
 
 /**
  * Класс подписи полигона для ObjectManager

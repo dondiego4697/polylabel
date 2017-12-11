@@ -1,5 +1,5 @@
-import isInside from 'src.util.checkPointPosition';
-import CONFIG from 'src.config';
+import isInside from '../checkPointPosition';
+import CONFIG from '../../config';
 
 export default function (map, center, coords, size, offset, resolvedInaccuracy) {
     let {MIN_ZOOM: i, MAX_ZOOM: j} = CONFIG;

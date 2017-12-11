@@ -1,4 +1,4 @@
-import templateLayoutFactory from 'templateLayoutFactory';
+import templateLayoutFactory from 'api/templateLayoutFactory';
 
 const template = templateLayoutFactory.createClass(`
     <div class="ymaps-polylabel-view" {% style %}position: {{options.labelPosition}};

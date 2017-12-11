@@ -1,6 +1,7 @@
-import CONFIG from 'src.config';
-import templateFiltersStorage from 'template.filtersStorage';
-import dotColorFilterStorage from 'src.util.templateFilterStorage.dotColor';
+import templateFiltersStorage from 'api/template.filtersStorage';
+
+import CONFIG from '../config';
+import dotColorFilterStorage from '../util/templateFilterStorage/dotColor';
 
 export default class PolylabelBased {
     constructor(map) {

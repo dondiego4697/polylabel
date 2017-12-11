@@ -2,8 +2,8 @@
   "name": "polylabel",
   "version": "0.0.1",
   "description": "",
-  "main": "build/util.polulabel.js",
   "scripts": {
+    "build": "grunt build",
     "lint": "eslint ."
   },
   "author": "",
@@ -12,6 +12,7 @@
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-es2015-modules-ym": "^0.3.0",
     "babel-preset-env": "^1.6.0",
     "chai": "^4.1.1",
     "chrome-remote-interface": "^0.24.4",

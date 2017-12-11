@@ -1,10 +1,11 @@
-import PBase from 'src.polylabel.PolylabelBase';
-import Monitor from 'Monitor';
-import ObjectManager from 'ObjectManager';
-import Label from 'src.label.ObjectManager.Label';
-import nextTick from 'system.nextTick';
-import EventManager from 'event.Manager';
-import State from 'src.util.State';
+import Monitor from 'api/Monitor';
+import ObjectManager from 'api/ObjectManager';
+import nextTick from 'api/system.nextTick';
+import EventManager from 'api/event.Manager';
+
+import PBase from './PolylabelBase';
+import Label from '../label/ObjectManager/Label';
+import State from '../util/State';
 
 export default class PolylabelObjectManager extends PBase {
     constructor(map, objectManager) {

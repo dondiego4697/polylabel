@@ -1,5 +1,5 @@
-import calculateArea from 'util.calculateArea';
-import GeoObject from 'GeoObject';
+import calculateArea from 'api/util.calculateArea';
+import GeoObject from 'api/GeoObject';
 
 export default function (polygonCoords) {
     if (typeof calculateArea === 'undefined') {

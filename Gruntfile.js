@@ -17,13 +17,13 @@ module.exports = function (grunt) {
                 src: [
                     'build/pre/**/*.js'
                 ],
-                dest: 'build/util.createPolylabel.js'
+                dest: 'build/polylabel.js'
             }
         },
         uglify: {
             build: {
-                src: 'build/util.createPolylabel.js',
-                dest: 'build/util.createPolylabel.min.js'
+                src: 'build/polylabel.js',
+                dest: 'build/polylabel.min.js'
             }
         },
         watch: {
@@ -36,7 +36,8 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-watch');
 
-    grunt.registerTask('default', ['babel', 'concat', 'uglify', 'watch']);
+    grunt.registerTask('build', ['babel', 'concat', 'uglify']);
+    grunt.registerTask('default', ['build', 'watch']);
 };
 
 function fillFiles(names) {

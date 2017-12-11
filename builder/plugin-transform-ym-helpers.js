@@ -20,7 +20,7 @@ module.exports = function ({ template, types: t }) {
 
         try {
             const simple = typeof replacement === 'string';
-            const helper = this.file.importYmModule(simple ? replacement : replacement[0]);
+            const helper = this.file.ym.addImport(simple ? replacement : replacement[0]);
 
             const replacementNode = simple ? helper :
                 t.memberExpression(helper, t.identifier(replacement[1]));
@@ -36,12 +36,12 @@ module.exports = function ({ template, types: t }) {
 
         // HACK: monkey-patch addHelper to add our specific helpers, instead of babel ones.
         const addHelper = state.file.addHelper;
-        state.file.addHelper = function (name) {
+        state.file.addHelper = name => {
             if (overrideHelpers[name]) {
-                return this.importYmModule(overrideHelpers[name]);
+                return state.file.ym.addImport(overrideHelpers[name]);
             }
 
-            return addHelper.call(this, name);
+            return addHelper.call(state.file, name);
         };
     }
 

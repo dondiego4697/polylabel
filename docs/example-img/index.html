@@ -47,8 +47,7 @@
                 properties: geoObject.properties.getAll()
             }
         }
-
-        ymaps.ready(['util.createPolylabel']).then(function () {
+        ymaps.ready(['polylabel.create']).then(function () {
             window.map = new ymaps.Map('map', {
                 center: [62, 100],
                 zoom: 4,
@@ -90,7 +89,7 @@
                     i++;
                 });
                 window.map.geoObjects.add(objectManager);
-                const polylabel = new ymaps.util.createPolylabel(map, objectManager);
+                const polylabel = new ymaps.polylabel.create(map, objectManager);
                 objectManager.events.add(['labelmouseenter', 'labelmouseleave'], event => {
                     const polygon = objectManager.objects.getById(event.get('objectId'));
                     const state = polylabel.getLabelState(polygon);

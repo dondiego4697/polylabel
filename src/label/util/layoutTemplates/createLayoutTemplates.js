@@ -1,4 +1,4 @@
-import templateLayoutFactory from 'templateLayoutFactory';
+import templateLayoutFactory from 'api/templateLayoutFactory';
 
 /**
  * Создает пользовательские шаблоны

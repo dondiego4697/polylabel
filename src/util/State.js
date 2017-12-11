@@ -1,4 +1,4 @@
-import DataManager from 'data.Manager';
+import DataManager from 'api/data.Manager';
 
 export default class State {
     constructor() {

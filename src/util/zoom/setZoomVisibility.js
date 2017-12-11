@@ -1,5 +1,5 @@
-import getFirstZoomInside from 'src.util.zoom.getFirstZoomInside';
-import getLayoutSize from 'src.label.util.getLayoutSize';
+import getFirstZoomInside from './getFirstZoomInside';
+import getLayoutSize from '../../label/util/getLayoutSize';
 
 export default function (
     labelType, map, zoom, currVisible, layout, center,

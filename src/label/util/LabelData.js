@@ -1,10 +1,10 @@
-import CONFIG from 'src.config';
-import parseZoomData from 'src.util.zoom.parseZoomData';
-import getPolylabelCenter from 'src.util.getPolesOfInaccessibility';
-import setZoomVisibility from 'src.util.zoom.setZoomVisibility';
-import transformPolygonCoords from 'src.util.transformPolygonCoords';
-import getPolygonWithMaxArea from 'src.util.getPolygonWithMaxArea';
-import transformHexToRGB from 'src.util.transformHexToRGB';
+import CONFIG from '../../config';
+import parseZoomData from '../../util/zoom/parseZoomData';
+import getPolylabelCenter from '../../util/getPolesOfInaccessibility';
+import setZoomVisibility from '../../util/zoom.setZoomVisibility';
+import transformPolygonCoords from '../../util/transformPolygonCoords';
+import getPolygonWithMaxArea from '../../util/getPolygonWithMaxArea';
+import transformHexToRGB from '../../util/transformHexToRGB';
 
 const {
     MIN_ZOOM,

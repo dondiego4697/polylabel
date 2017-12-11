@@ -1,5 +1,5 @@
-import labelLayoutTemplate from 'src.label.util.layoutTemplates.labelLayoutTemplate';
-import dotLayoutTemplate from 'src.label.util.layoutTemplates.dotLayoutTemplate';
+import labelLayoutTemplate from './labelLayoutTemplate';
+import dotLayoutTemplate from './dotLayoutTemplate';
 
 /**
  * Возвращает базовые обертки над шаблонами

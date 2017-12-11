@@ -1,10 +1,9 @@
-export default isInside;
 /**
      * Проверка, находится ли точка внутри полигона.
      * @param {Array[2]} point - Точка.
      * @param {Array} coords - Координаты полигона.
      */
-function isInside(point, coords) {
+export default function isInside(point, coords) {
     let parity = 0;
     for (let i = 0; i < coords.length - 1; i++) {
         let e = [coords[i], coords[i + 1]];

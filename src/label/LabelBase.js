@@ -1,7 +1,7 @@
-import createLayoutTemplates from 'src.label.util.layoutTemplates.createLayoutTemplates';
-import LabelData from 'src.label.util.LabelData';
-import classHelper from 'src.label.util.classHelper';
-import getLayoutSize from 'src.label.util.getLayoutSize';
+import createLayoutTemplates from './util/layoutTemplates/createLayoutTemplates';
+import LabelData from './util/LabelData';
+import classHelper from './util/classHelper';
+import getLayoutSize from './util/getLayoutSize';
 
 export default class LabelBase {
     constructor() {

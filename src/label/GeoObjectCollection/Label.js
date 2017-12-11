@@ -1,7 +1,7 @@
-import Placemark from 'Placemark';
-import LabelPlacemarkOverlay from 'src.label.util.LabelPlacemarkOverlay';
-import getBaseLayoutTemplates from 'src.label.util.layoutTemplates.getBaseLayoutTemplates';
-import LabelBase from 'src.label.LabelBase';
+import Placemark from 'api/Placemark';
+import LabelPlacemarkOverlay from '../util/LabelPlacemarkOverlay';
+import getBaseLayoutTemplates from '../util/layoutTemplates/getBaseLayoutTemplates';
+import LabelBase from '../LabelBase';
 
 /**
  * Класс подписи полигона для геоколлекции
@@ -9,6 +9,7 @@ import LabelBase from 'src.label.LabelBase';
 export default class Label extends LabelBase {
     constructor(map, polygon, parentCollection, polylabel) {
         super();
+
         this._map = map;
         this._polylabel = polylabel;
         this._polygon = polygon;

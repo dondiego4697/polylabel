@@ -1,11 +1,12 @@
-import PBase from 'src.polylabel.PolylabelBase';
-import Label from 'src.label.GeoObjectCollection.Label';
-import GeoObjectCollection from 'GeoObjectCollection';
-import Monitor from 'Monitor';
-import nextTick from 'system.nextTick';
-import EventManager from 'event.Manager';
-import Event from 'Event';
-import State from 'src.util.State';
+import GeoObjectCollection from 'api/GeoObjectCollection';
+import Monitor from 'api/Monitor';
+import nextTick from 'api/system.nextTick';
+import EventManager from 'api/event.Manager';
+import Event from 'api/Event';
+
+import PBase from './PolylabelBase';
+import Label from '../label/GeoObjectCollection/Label';
+import State from '../util/State';
 
 export default class PolylabelCollection extends PBase {
     constructor(map, polygonsCollection) {

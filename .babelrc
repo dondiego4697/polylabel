@@ -49,9 +49,14 @@
             }
         ],
         [
-            "./builder/babel-plugin-transform-es2015-modules-ym",
+            "babel-plugin-transform-es2015-modules-ym",
             {
-                "sourceExtension": ".es6.js"
+                "moduleBase": "polylabel",
+                "sourceDir": "src",
+                "ymGlobal": "ymaps",
+                "sourceMappings": {
+                    "api": ""
+                }
             }
         ]
     ]

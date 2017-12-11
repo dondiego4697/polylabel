@@ -1,8 +1,3 @@
-const methods = {
-    add: add,
-    remove: remove
-};
-
 /**
  * @param {*} layout
  * @param {*} className - класс по которому находим элемент
@@ -35,4 +30,7 @@ function getElemByClass(layout, className) {
     return el.getElementsByClassName(className)[0];
 }
 
-export default methods;
+export default {
+    add,
+    remove
+};
