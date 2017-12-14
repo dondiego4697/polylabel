@@ -38,22 +38,22 @@ ymaps.ready(['polylabel.create']).then(function () {
     });
 
     objectManager.add({
-	    type: 'Feature',
-        id: 1,
-        geometry: {
-            type: 'Polygon',
-            coordinates: [[
-    	        [66 , 74],
-                [68, 92],
-                [59, 88],
-                [62, 80],
-                [66, 74]
-            ]]
-	    },
-        properties: {
-  	        name: 'nameOfMyPolygon'
-        }
-    });
+	        type: 'Feature',
+            id: 1,
+            geometry: {
+                type: 'Polygon',
+                coordinates: [[
+    	            [66 , 74],
+                    [68, 92],
+                    [59, 88],
+                    [62, 80],
+                    [66, 74]
+                ]]
+	        },
+            properties: {
+  	            name: 'nameOfMyPolygon'
+            }
+        });
     map.geoObjects.add(objectManager);
     const polylabel = new ymaps.polylabel.create(map, objectManager);
 });
