@@ -27,6 +27,7 @@ function initStyles() {
         }
         .ymaps-polylabel-dark-label {
             color: #06264f;
+            -webkit-font-smoothing: subpixel-antialiased;
             text-shadow:
             0 -1px 0 rgba( 255, 255, 255, 0.4 ),
             0 -1px 0 rgba( 255, 255, 255, 0.4 ),
