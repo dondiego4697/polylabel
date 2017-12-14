@@ -47,15 +47,17 @@ Simple example
 	            type: 'Feature',
                 id: 1,
                 geometry: {
-		            type: 'Polygon',
-                    coordinates: [[
-    	                [66 , 74],
-                        [68, 92],
-                        [59, 88],
-                        [62, 68],
-                        [66, 74]
-                    ]]
-	                },
+                    type: 'Polygon',
+                    coordinates: [
+                        [
+    	                    [66 , 74],
+                            [68, 92],
+                            [59, 88],
+                            [62, 68],
+                            [66, 74]
+                        ]
+                    ]
+	            },
                 options: {
   	                labelLayout: '<div>{{properties.hintContent}}</div>',
                 },
