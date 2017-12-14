@@ -79,11 +79,15 @@
                         labelDotCursor: 'pointer',
                         labelPermissibleInaccuracyOfVisibility: 0
                     }));
-                    if (polygon.properties.get('hintContent') === 'Vologda Oblast') {
+                    const hintContent = polygon.properties.get('hintContent');
+                    if (hintContent === 'Vologda Oblast') {
                         polygon.options.set('labelCenterCoords', [59.843133, 39.818510]);
                     }
-                    if (polygon.properties.get('hintContent') === 'Mordovia') {
+                    if (hintContent === 'Mordovia') {
                         polygon.options.set('labelCenterCoords', [54.305451, 44.035049]);
+                    }
+                    if (hintContent === 'Kirov Oblast') {
+                        polygon.options.set('labelCenterCoords', [58.225132, 49.481891]);
                     }
                     objectManager.add(transformGOToJSON(polygon, i));
                     i++;

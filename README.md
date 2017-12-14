@@ -2,12 +2,81 @@ Yandex.Maps API Polylabeler Plugin
 ===================
 
 This module allows to set labels inside polygons on the map choosing the suitable position automatically.
-It is based on [Yandex.Maps JS API 2.1](https://tech.yandex.ru/maps/doc/jsapi/2.1/quick-start/tasks/quick-start-docpage/)  
+It is created for [Yandex.Maps JS API v2.1](https://tech.yandex.ru/maps/doc/jsapi/2.1/quick-start/tasks/quick-start-docpage/) and based on [Polylabel module](https://github.com/mapbox/polylabel)  
 
 [Demo1](https://dondiego4697.github.io/polylabel/docs/example-text/)  
 [Demo2](https://dondiego4697.github.io/polylabel/docs/example-img/)  
 
 ![text example](/docs/res/example1.png)  
+
+Simple example
+============
+
+```html
+<html>
+    <head>
+        <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+        <!-- Change my.cdn.tld to your CDN host name -->
+        <script src="http://my.cdn.tld/util.calculateArea.min.js" type="text/javascript"></script>
+        <script src="http://my.cdn.tld/util.createPolylabel.min.js" type="text/javascript"></script>
+
+        <style>
+            html, body {
+                width: 100%;
+                height: 100%;
+                padding: 0;
+                margin: 0;
+                font-family: Arial;
+            }
+            #map {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+        <script>
+            var map = new ymaps.Map('map', {
+                center: [65, 81],
+                zoom: 4,
+                controls: ['searchControl', 'zoomControl']
+            }, {});
+
+            var objectManager = new ymaps.ObjectManager();
+
+            //adding polygon in objectManager
+            objectManager.add({
+	            type: 'Feature',
+                id: 1,
+                geometry: {
+		            type: 'Polygon',
+                    coordinates: [[
+    	                [66 , 74],
+                        [68, 92],
+                        [59, 88],
+                        [62, 68],
+                        [66, 74]
+                    ]]
+	                },
+                options: {
+  	                labelLayout: '<div>{{properties.hintContent}}</div>',
+                },
+                properties: {
+  	                hintContent: 'polylabeler'
+                }
+            });
+
+            //adding objectManager in map
+            map.geoObjects.add(objectManager);
+            //waiting polylabel module
+            ymaps.ready(['polylabel.create']).then(function () {
+                const polylabel = new ymaps.polylabel.create(map, objectManager);
+            });
+        </script>
+    </head>
+    <body>
+        <div id="map"></div>
+    </body>
+</html>
+```
 
 Loading
 ============
@@ -67,6 +136,8 @@ let state = polyLabeler.getLabelState(polygon);
 ```
 
 ## State
+
+### write/read
 | Name | Type | Default value | Value | Description |
 |------|------|---------------|-------|-------------|
 | visible | string\|undefined | undefined | dot | Show small label |
@@ -81,6 +152,14 @@ const polyLabeler = new Polylabel(map, objectManager);
 let state = polyLabeler.getLabelState(polygon);
 state.set('visible', 'dot');
 ```
+
+### only read
+| Name | Type | Description |
+|------|------|-------------|
+| center | Array[2]<Number> | Current center of label |
+| currentVisibility | string | Label current visibility |
+| currentConfiguredVisibility | string | Label visiblity, which configured by module |
+
 
 ## Events
 Labels events can be accessed through polygons.  
