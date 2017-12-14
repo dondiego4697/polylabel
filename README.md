@@ -12,9 +12,9 @@ It is based on [Yandex.Maps JS API 2.1](https://tech.yandex.ru/maps/doc/jsapi/2.
 Loading
 ============
 
-1. Put module sourse code from **release** on your CDN.
-2. Put module sourse code ([Area calculation module](https://github.com/yandex/mapsapi-area)) on your CDN. (It is necessary for current module)
-3. Load both [Yandex Maps JS API 2.1](https://tech.yandex.ru/maps/doc/jsapi/2.1/quick-start/tasks/quick-start-docpage/) and modules source code by adding the following code into **<head>** section of your page.
+1. Download the module source code from **release** to your CDN.
+2. Download the source code of the ([Area calculation plugin](https://github.com/yandex/mapsapi-area)) to your CDN. (It is used by the present module)
+3. Load both [Yandex.Maps JS API 2.1](https://tech.yandex.ru/maps/doc/jsapi/2.1/quick-start/tasks/quick-start-docpage/) and the Polylabeler Plugin by adding the following code into the **<head>** section of your page.
 
 ```html
 <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
