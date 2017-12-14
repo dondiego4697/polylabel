@@ -20,7 +20,7 @@ Loading
 <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
 <!-- Change my.cdn.tld to your CDN host name -->
 <script src="http://my.cdn.tld/util.calculateArea.min.js" type="text/javascript"></script>
-<script src="http://my.cdn.tld/util.createPolylabel.min.js" type="text/javascript"></script>
+<script src="http://my.cdn.tld/polylabel.min.js" type="text/javascript"></script>
 ```
 
 Simple example
@@ -51,7 +51,7 @@ ymaps.ready(['polylabel.create']).then(function () {
             ]]
 	},
         properties: {
-  	        name: 'nameOfMyPolygon'
+  	    name: 'nameOfMyPolygon'
         }
     });
     map.geoObjects.add(objectManager);
