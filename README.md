@@ -7,7 +7,7 @@ It is based on [Yandex.Maps JS API 2.1](https://tech.yandex.ru/maps/doc/jsapi/2.
 [Demo1](https://dondiego4697.github.io/polylabel/docs/example-text/)  
 [Demo2](https://dondiego4697.github.io/polylabel/docs/example-img/)  
 
-![text example](https://dondiego4697.github.io/polylabel/docs/res/example1.png)  
+![text example](/docs/res/example1.png)  
 
 Loading
 ============
