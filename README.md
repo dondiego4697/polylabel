@@ -7,78 +7,7 @@ It is created for [Yandex.Maps JS API v2.1](https://tech.yandex.ru/maps/doc/jsap
 [Demo1](https://dondiego4697.github.io/polylabel/docs/example-text/)  
 [Demo2](https://dondiego4697.github.io/polylabel/docs/example-img/)  
 
-![text example](/docs/res/example1.png)  
-
-Simple example
-============
-#### example shows, how to create label for one polygon
-```html
-<html>
-    <head>
-        <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
-        <!-- Change my.cdn.tld to your CDN host name -->
-        <script src="http://my.cdn.tld/util.calculateArea.min.js" type="text/javascript"></script>
-        <script src="http://my.cdn.tld/util.createPolylabel.min.js" type="text/javascript"></script>
-
-        <style>
-            html, body {
-                width: 100%;
-                height: 100%;
-                padding: 0;
-                margin: 0;
-                font-family: Arial;
-            }
-            #map {
-                width: 100%;
-                height: 100%;
-            }
-        </style>
-        <script>
-            var map = new ymaps.Map('map', {
-                center: [65, 81],
-                zoom: 4,
-                controls: ['searchControl', 'zoomControl']
-            }, {});
-
-            var objectManager = new ymaps.ObjectManager();
-
-            //adding polygon in objectManager
-            objectManager.add({
-	            type: 'Feature',
-                id: 1,
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [
-                        [
-    	                    [66 , 74],
-                            [68, 92],
-                            [59, 88],
-                            [62, 68],
-                            [66, 74]
-                        ]
-                    ]
-	            },
-                options: {
-  	                labelLayout: '<div>{{properties.hintContent}}</div>',
-                },
-                properties: {
-  	                hintContent: 'polylabeler'
-                }
-            });
-
-            //adding objectManager in map
-            map.geoObjects.add(objectManager);
-            //waiting polylabel module
-            ymaps.ready(['polylabel.create']).then(function () {
-                const polylabel = new ymaps.polylabel.create(map, objectManager);
-            });
-        </script>
-    </head>
-    <body>
-        <div id="map"></div>
-    </body>
-</html>
-```
+![text example](/docs/res/example1.png)
 
 Loading
 ============
@@ -94,6 +23,42 @@ Loading
 <script src="http://my.cdn.tld/util.createPolylabel.min.js" type="text/javascript"></script>
 ```
 
+Simple example
+============
+#### Example shows, how to create label for one polygon.
+
+```js
+ymaps.ready(['polylabel.create']).then(function () {
+    var map = new ymaps.Map('map', {
+        center: [65, 81],
+        zoom: 5
+    });
+    var objectManager = new ymaps.ObjectManager({
+        geoObjectLabelLayout: '<div>{{properties.name}}</div>',
+    });
+
+    objectManager.add({
+	    type: 'Feature',
+        id: 1,
+        geometry: {
+            type: 'Polygon',
+            coordinates: [[
+    	        [66 , 74],
+                [68, 92],
+                [59, 88],
+                [62, 80],
+                [66, 74]
+            ]]
+	    },
+        properties: {
+  	        name: 'nameOfMyPolygon'
+        }
+    });
+    map.geoObjects.add(objectManager);
+    const polylabel = new ymaps.polylabel.create(map, objectManager);
+});
+```
+
 Launch
 ============
 It is possible to work with two API entities:
@@ -102,7 +67,7 @@ It is possible to work with two API entities:
 
 Get access to the module functions by using [ymaps.modules.require](https://tech.yandex.ru/maps/doc/jsapi/2.1/ref/reference/modules.require-docpage/) method:
 ```js
-ymaps.modules.require(['util.createPolylabel']).then(function (Polylabel) {
+ymaps.modules.require(['polylabel.create']).then(function (Polylabel) {
     /**
     * @param {Map} map - map instance
     * @param {GeoObjectCollection | ObjectManager} component -
