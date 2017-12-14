@@ -33,9 +33,7 @@ ymaps.ready(['polylabel.create']).then(function () {
         center: [65, 81],
         zoom: 5
     });
-    var objectManager = new ymaps.ObjectManager({
-        geoObjectLabelLayout: '<div>{{properties.name}}</div>',
-    });
+    var objectManager = new ymaps.ObjectManager();
 
     objectManager.add({
 	type: 'Feature',
