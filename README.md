@@ -7,7 +7,7 @@ It is created for [Yandex.Maps JS API v2.1](https://tech.yandex.ru/maps/doc/jsap
 [Demo1](https://dondiego4697.github.io/polylabel/docs/example-text/)  
 [Demo2](https://dondiego4697.github.io/polylabel/docs/example-img/)  
 
-![example img](https://cdn.rawgit.com/dondiego4697/polylabel/dda7856d/docs/res/example.png)
+![example img](https://cdn.rawgit.com/dondiego4697/polylabel/18e4c1ec/docs/res/example1.png)
 
 Loading
 ============
