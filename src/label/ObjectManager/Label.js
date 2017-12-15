@@ -49,6 +49,12 @@ export default class Label extends LabelBase {
         this._baseLayoutTemplates = getBaseLayoutTemplates();
     }
 
+    getLabelLayout(type) {
+        const overlay = this._objectManager.objects.overlays.getById(this._placemark[type].id);
+        if (!overlay) return Promise.reject();
+        return overlay.getLayout();
+    }
+
     createPlacemarks() {
         ['label', 'dot'].forEach(type => {
             this._placemark[type] = Label._createPlacemark(`${type}#${this._polygon.id}`, {

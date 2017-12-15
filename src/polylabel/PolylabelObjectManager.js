@@ -74,9 +74,8 @@ export default class PolylabelObjectManager extends PBase {
     /**
      * Анализирует данные о подписи полигона и устанавливает параметры подписи
      */
-    _setLabelData(polygon, types, label, visibleState) {
+    _setLabelData(polygon, label, visibleState, types) {
         const data = label.setDataByZoom(this._map.getZoom(), types, visibleState);
-
         this._setCurrentConfiguredVisibility(polygon, data.currentConfiguredVisibileType);
         this._setCurrentVisibility(polygon, data.currentVisibleType);
         this._setCurrentCenter(polygon, data.currentCenter);
@@ -104,9 +103,9 @@ export default class PolylabelObjectManager extends PBase {
             if (!polygon) return;
             this._setLabelData(
                 polygon,
-                ['dot', 'label'],
                 this._labelsState.get(polygon, 'label'),
-                newValue
+                newValue,
+                ['dot', 'label']
             );
         });
     }
@@ -133,7 +132,7 @@ export default class PolylabelObjectManager extends PBase {
             const polygon = label.properties.polygon;
             const labelInst = this._labelsState.get(polygon, 'label');
             labelInst.setLayout(labelType, layout);
-            this._setLabelData(polygon, [labelType], labelInst);
+            this._setLabelData(polygon, labelInst, undefined, [labelType]);
         });
     }
 
@@ -155,7 +154,7 @@ export default class PolylabelObjectManager extends PBase {
                         const polygon = label.properties.polygon;
                         const labelInst = this._labelsState.get(polygon, 'label');
                         labelInst.setLayout(labelType, layout);
-                        this._setLabelData(polygon, [labelType], labelInst);
+                        this._setLabelData(polygon, labelInst, undefined, [labelType]);
                     });
                 });
                 break;
@@ -233,8 +232,8 @@ export default class PolylabelObjectManager extends PBase {
 
             label.setLayoutTemplate();
             label.updateOptions();
-
-            this._setLabelData(polygon, ['dot', 'label'], this._labelsState.get(polygon, 'label'));
+            label.updateLayouts();
+            this._setLabelData(polygon, this._labelsState.get(polygon, 'label'), undefined, ['dot', 'label']);
         });
     }
 

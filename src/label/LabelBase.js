@@ -26,8 +26,18 @@ export default class LabelBase {
         this._initLayoutSizeChangeHandler(layout);
     }
 
+    updateLayouts() {
+        this.getLabelLayout('label').then(layout => {
+            this.setLayout('label', layout);
+        });
+        this.getLabelLayout('dot').then(layout => {
+            this.setLayout('dot', layout);
+        });
+    }
+
     _initLayoutSizeChangeHandler(layout) {
         const el = layout.getElement();
+        if (!el) return;
         let imgs = Array.prototype.slice.call(el.getElementsByTagName('img'));
         if (imgs.length > 0) {
             const imagesLoaded = Promise.all(imgs.map(img => {
@@ -38,8 +48,9 @@ export default class LabelBase {
             }));
             imagesLoaded.then(() => {
                 const size = getLayoutSize(layout);
+                if (!size) return;
                 if (size.width > 0 && size.height > 0) {
-                    this._polylabel._setLabelData(this._polygon, ['dot', 'label'], this);
+                    this._polylabel._setLabelData(this._polygon, this, undefined, ['dot', 'label']);
                 }
             });
         }

@@ -109,13 +109,10 @@ export default class PolylabelCollection extends PBase {
      * Анализирует данные о подписи полигона и устанавливает параметры подписи
      */
     _setLabelData(polygon, label, visibleState) {
-        return new Promise(resolve => {
-            const data = label.setDataByZoom(this._map.getZoom(), visibleState);
-            this._setCurrentConfiguredVisibility(polygon, data.currentConfiguredVisibileType);
-            this._setCurrentVisibility(polygon, data.currentVisibleType);
-            this._setCurrentCenter(polygon, data.currentCenter);
-            resolve();
-        });
+        const data = label.setDataByZoom(this._map.getZoom(), visibleState);
+        this._setCurrentConfiguredVisibility(polygon, data.currentConfiguredVisibileType);
+        this._setCurrentVisibility(polygon, data.currentVisibleType);
+        this._setCurrentCenter(polygon, data.currentCenter);
     }
 
     _setCurrentCenter(polygon, center) {
@@ -215,6 +212,7 @@ export default class PolylabelCollection extends PBase {
             label.setLayoutTemplate();
 
             this._calculatePolygonLabelData(polygon, true).then(label => {
+                label.updateLayouts();
                 this._labelsState.set(polygon, 'label', label);
                 this._setLabelData(polygon, label);
             });

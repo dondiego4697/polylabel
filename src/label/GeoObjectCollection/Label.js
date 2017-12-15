@@ -59,8 +59,7 @@ export default class Label extends LabelBase {
     }
 
     getLabelLayout(type) {
-        return this._placemark[type].getOverlay()
-            .then(overlay => overlay.getLayout());
+        return this._placemark[type].getOverlay().then(overlay => overlay.getLayout());
     }
 
     _init() {
