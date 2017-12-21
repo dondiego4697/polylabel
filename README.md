@@ -52,8 +52,8 @@ ymaps.ready(['polylabel.create']).then(function () {
   	    name: 'nameOfMyPolygon'
         },
         options: {
-        labelDefaults: 'light',
-        labelLayout: '{{properties.name}}'
+            labelDefaults: 'light',
+            labelLayout: '{{properties.name}}'
         }
     });
     map.geoObjects.add(objectManager);
