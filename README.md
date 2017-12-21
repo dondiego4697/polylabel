@@ -50,6 +50,10 @@ ymaps.ready(['polylabel.create']).then(function () {
 	},
         properties: {
   	    name: 'nameOfMyPolygon'
+        },
+        options: {
+        labelDefaults: 'light',
+        labelLayout: '{{properties.name}}'
         }
     });
     map.geoObjects.add(objectManager);
@@ -159,7 +163,7 @@ geoObjectCollection.events.add(['labelmouseenter', 'labelmouseleave'], event => 
 
 | Name | Type | Default value |
 |------|------|---------------|
-| [labelLayout](#labelayout) *           | string                                                  |     -                  |
+| [labelLayout](#labellayout) *           | string                                                  |     -                  |
 | [labelDotLayout](#labeldotlayout)      | string                                                  |   default dot layout   |
 | [labelDotVisible](#labeldotvisible)    | boolean                                                 |   true                 |
 | [labelDefaults](#labeldefaults)        | string                                                  |     -                  |
